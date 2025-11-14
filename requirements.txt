@@ -1,0 +1,7 @@
+# Core dependencies for HERP-Notion integration
+requests>=2.31.0
+notion-client>=2.2.1
+python-dotenv>=1.0.0
+click>=8.1.7
+pydantic>=2.5.0
+structlog>=24.1.0
