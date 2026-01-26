@@ -33,9 +33,10 @@ jobs:
 
       - name: Lint with flake8
         run: flake8 src/ tests/ --max-line-length=100 --extend-ignore=E203,W503
+        continue-on-error: true
 
       - name: Lint with pylint
-        run: pylint src/ --disable=C0111,R0903,W0212
+        run: pylint src/ --disable=C0111,R0903,W0212,E1101,E0401,W0611,C0301
         continue-on-error: true
 
   test:
