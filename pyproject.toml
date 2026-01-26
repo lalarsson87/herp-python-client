@@ -56,7 +56,8 @@ Repository = "https://github.com/belong-inc/herp-notion-integration"
 Changelog = "https://github.com/belong-inc/herp-notion-integration/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-where = ["src"]
+where = ["."]
+include = ["src*"]
 
 [tool.black]
 line-length = 88
