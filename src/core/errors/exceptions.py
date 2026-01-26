@@ -9,18 +9,22 @@ Replaces fragile string matching with type-based error classification.
 # Base Exceptions
 # ============================================================================
 
+
 class HerpNotionError(Exception):
     """Base exception for all HERP-Notion integration errors"""
+
     pass
 
 
 class TransientError(HerpNotionError):
     """Base class for transient errors that should be retried"""
+
     pass
 
 
 class PermanentError(HerpNotionError):
     """Base class for permanent errors that should fail-fast"""
+
     pass
 
 
@@ -30,36 +34,43 @@ class PermanentError(HerpNotionError):
 
 class HerpAPIError(HerpNotionError):
     """Base exception for HERP API errors"""
+
     pass
 
 
 class HerpRateLimitError(TransientError, HerpAPIError):
     """HERP API rate limit exceeded"""
+
     pass
 
 
 class HerpAuthenticationError(PermanentError, HerpAPIError):
     """HERP API authentication failed (401, 403)"""
+
     pass
 
 
 class HerpValidationError(PermanentError, HerpAPIError):
     """HERP API validation error (400, invalid input)"""
+
     pass
 
 
 class HerpNotFoundError(PermanentError, HerpAPIError):
     """HERP API resource not found (404)"""
+
     pass
 
 
 class HerpServerError(TransientError, HerpAPIError):
     """HERP API server error (500, 502, 503, 504)"""
+
     pass
 
 
 class HerpNetworkError(TransientError, HerpAPIError):
     """HERP API network connectivity error"""
+
     pass
 
 
@@ -69,36 +80,43 @@ class HerpNetworkError(TransientError, HerpAPIError):
 
 class NotionAPIError(HerpNotionError):
     """Base exception for Notion API errors"""
+
     pass
 
 
 class NotionRateLimitError(TransientError, NotionAPIError):
     """Notion API rate limit exceeded"""
+
     pass
 
 
 class NotionAuthenticationError(PermanentError, NotionAPIError):
     """Notion API authentication failed (401, 403)"""
+
     pass
 
 
 class NotionValidationError(PermanentError, NotionAPIError):
     """Notion API validation error (400, invalid input)"""
+
     pass
 
 
 class NotionNotFoundError(PermanentError, NotionAPIError):
     """Notion API resource not found (404)"""
+
     pass
 
 
 class NotionServerError(TransientError, NotionAPIError):
     """Notion API server error (500, 502, 503, 504)"""
+
     pass
 
 
 class NotionNetworkError(TransientError, NotionAPIError):
     """Notion API network connectivity error"""
+
     pass
 
 
@@ -108,21 +126,25 @@ class NotionNetworkError(TransientError, NotionAPIError):
 
 class SyncError(HerpNotionError):
     """Base exception for sync operation errors"""
+
     pass
 
 
 class SyncValidationError(PermanentError, SyncError):
     """Sync validation error (invalid configuration, missing fields)"""
+
     pass
 
 
 class SyncDataError(PermanentError, SyncError):
     """Sync data error (data transformation failed, mapping error)"""
+
     pass
 
 
 class SyncTimeoutError(TransientError, SyncError):
     """Sync operation timed out"""
+
     pass
 
 
@@ -132,16 +154,19 @@ class SyncTimeoutError(TransientError, SyncError):
 
 class CacheError(HerpNotionError):
     """Base exception for cache errors"""
+
     pass
 
 
 class CacheFullError(TransientError, CacheError):
     """Cache is full (should trigger eviction but can retry)"""
+
     pass
 
 
 class CacheSerializationError(PermanentError, CacheError):
     """Failed to serialize/deserialize cache entry"""
+
     pass
 
 
@@ -151,6 +176,7 @@ class CacheSerializationError(PermanentError, CacheError):
 
 class CircuitBreakerError(TransientError):
     """Circuit breaker is open (service is down)"""
+
     pass
 
 
@@ -160,11 +186,13 @@ class CircuitBreakerError(TransientError):
 
 class RetryError(HerpNotionError):
     """Base exception for retry mechanism errors"""
+
     pass
 
 
 class RetryBudgetExceededError(RetryError):
     """Retry budget (max total duration) exceeded"""
+
     pass
 
 

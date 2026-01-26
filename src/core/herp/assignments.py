@@ -10,7 +10,6 @@ from typing import Dict, Any, List
 from ..utils.logging import get_logger
 from .base_client import HerpBaseClient
 
-
 logger = get_logger(__name__)
 
 
@@ -43,11 +42,7 @@ class AssignmentsAPI:
         data = self.client.get(f"/v1/candidacies/{candidacy_id}/assignments")
         return data.get("assignments", data.get("data", []))
 
-    def assign(
-        self,
-        candidacy_id: str,
-        user_id: str
-    ) -> Dict[str, Any]:
+    def assign(self, candidacy_id: str, user_id: str) -> Dict[str, Any]:
         """
         Assign team member to candidacy
 
@@ -59,15 +54,10 @@ class AssignmentsAPI:
             Assignment record
         """
         return self.client.post(
-            f"/v1/candidacies/{candidacy_id}/assignments",
-            json={"userId": user_id}
+            f"/v1/candidacies/{candidacy_id}/assignments", json={"userId": user_id}
         )
 
-    def remove(
-        self,
-        candidacy_id: str,
-        assignment_id: str
-    ) -> Dict[str, Any]:
+    def remove(self, candidacy_id: str, assignment_id: str) -> Dict[str, Any]:
         """
         Remove team member assignment
 
