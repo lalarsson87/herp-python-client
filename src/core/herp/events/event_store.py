@@ -12,15 +12,13 @@ Supports:
 - Event snapshots for performance
 """
 
-from typing import List, Optional, Dict, Any, Callable
-from datetime import datetime
-from abc import ABC, abstractmethod
 import json
+from abc import ABC, abstractmethod
+from datetime import datetime
 from pathlib import Path
 
-from .events import Event
 from ...utils.logging import get_logger
-
+from .events import Event
 
 logger = get_logger(__name__)
 
@@ -50,11 +48,7 @@ class EventStore(ABC):
         pass
 
     @abstractmethod
-    def load_events(
-        self,
-        aggregate_id: str,
-        from_version: int = 0
-    ) -> List[Event]:
+    def load_events(self, aggregate_id: str, from_version: int = 0) -> List[Event]:
         """
         Load all events for an aggregate
 
@@ -72,7 +66,7 @@ class EventStore(ABC):
         self,
         event_type: str,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Event]:
         """
         Load events by type
@@ -91,7 +85,7 @@ class EventStore(ABC):
     def load_all_events(
         self,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Event]:
         """
         Load all events
@@ -140,15 +134,9 @@ class InMemoryEventStore(EventStore):
             self.events_by_type[event.event_type] = []
         self.events_by_type[event.event_type].append(event)
 
-        logger.debug(
-            f"Appended event: {event.event_type} for {event.aggregate_id}"
-        )
+        logger.debug(f"Appended event: {event.event_type} for {event.aggregate_id}")
 
-    def load_events(
-        self,
-        aggregate_id: str,
-        from_version: int = 0
-    ) -> List[Event]:
+    def load_events(self, aggregate_id: str, from_version: int = 0) -> List[Event]:
         """Load all events for an aggregate"""
         events = self.events_by_aggregate.get(aggregate_id, [])
 
@@ -161,7 +149,7 @@ class InMemoryEventStore(EventStore):
         self,
         event_type: str,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Event]:
         """Load events by type"""
         events = self.events_by_type.get(event_type, [])
@@ -177,7 +165,7 @@ class InMemoryEventStore(EventStore):
     def load_all_events(
         self,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Event]:
         """Load all events"""
         events = self.events.copy()
@@ -241,15 +229,9 @@ class FileEventStore(EventStore):
         with open(event_file, "w") as f:
             json.dump(event.to_dict(), f, indent=2)
 
-        logger.debug(
-            f"Wrote event to file: {event_file}"
-        )
+        logger.debug(f"Wrote event to file: {event_file}")
 
-    def load_events(
-        self,
-        aggregate_id: str,
-        from_version: int = 0
-    ) -> List[Event]:
+    def load_events(self, aggregate_id: str, from_version: int = 0) -> List[Event]:
         """Load all events for an aggregate from files"""
         aggregate_dir = self.base_path / aggregate_id
 
@@ -272,7 +254,7 @@ class FileEventStore(EventStore):
         self,
         event_type: str,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Event]:
         """Load events by type (scans all files)"""
         events = []
@@ -306,7 +288,7 @@ class FileEventStore(EventStore):
     def load_all_events(
         self,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Event]:
         """Load all events from files"""
         events = []

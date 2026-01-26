@@ -5,13 +5,12 @@ HERP Async Assignments API Client
 Async version of team assignment operations.
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from ..utils.validators import validate_list_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response
 from .async_base_client import AsyncHerpBaseClient
 from .schemas import HerpAssignmentsListResponse
-
 
 logger = get_logger(__name__)
 
@@ -47,10 +46,7 @@ class AsyncAssignmentsAPI:
         return data.get("assignments", data.get("data", []))
 
     async def assign(
-        self,
-        candidacy_id: str,
-        user_id: str,
-        role: str = "recruiter"
+        self, candidacy_id: str, user_id: str, role: str = "recruiter"
     ) -> Dict[str, Any]:
         """
         Assign user to candidacy
@@ -65,8 +61,7 @@ class AsyncAssignmentsAPI:
         """
         assignment_data = {"user_id": user_id, "role": role}
         data = await self.client.post(
-            f"/v1/candidacies/{candidacy_id}/assignments",
-            json=assignment_data
+            f"/v1/candidacies/{candidacy_id}/assignments", json=assignment_data
         )
         logger.info(f"Assigned {user_id} as {role} to candidacy {candidacy_id}")
         return data.get("assignment", data.get("data", data))

@@ -11,25 +11,24 @@ The aggregate:
 - Enables temporal queries (state at any point in time)
 """
 
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
+from ...utils.logging import get_logger
+from .event_store import EventStore
 from .events import (
-    Event,
+    AssignmentAdded,
+    AssignmentRemoved,
     CandidacyCreated,
-    CandidacyStepChanged,
     CandidacyStatusChanged,
+    CandidacyStepChanged,
     CandidacyTerminated,
     ContactAdded,
     ContactUpdated,
+    Event,
     FileUploaded,
     TimelineCommentAdded,
-    AssignmentAdded,
-    AssignmentRemoved,
 )
-from .event_store import EventStore
-from ...utils.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -68,7 +67,7 @@ class EventSourcedCandidacy:
         self,
         candidacy_id: str,
         event_store: EventStore,
-        events: Optional[List[Event]] = None
+        events: Optional[List[Event]] = None,
     ):
         """
         Initialize event-sourced candidacy
@@ -135,7 +134,9 @@ class EventSourcedCandidacy:
         return candidacy
 
     @classmethod
-    def load(cls, candidacy_id: str, event_store: EventStore) -> "EventSourcedCandidacy":
+    def load(
+        cls, candidacy_id: str, event_store: EventStore
+    ) -> "EventSourcedCandidacy":
         """
         Load candidacy from event store
 
@@ -192,10 +193,7 @@ class EventSourcedCandidacy:
         ]
 
     def change_step(
-        self,
-        to_step: str,
-        comment: Optional[str] = None,
-        user_id: Optional[str] = None
+        self, to_step: str, comment: Optional[str] = None, user_id: Optional[str] = None
     ) -> None:
         """
         Change hiring step
@@ -222,7 +220,7 @@ class EventSourcedCandidacy:
         self,
         to_status: str,
         reason: Optional[str] = None,
-        user_id: Optional[str] = None
+        user_id: Optional[str] = None,
     ) -> None:
         """
         Change candidacy status
@@ -246,10 +244,7 @@ class EventSourcedCandidacy:
         self._apply_event(event)
 
     def terminate(
-        self,
-        reason: str,
-        comment: Optional[str] = None,
-        user_id: Optional[str] = None
+        self, reason: str, comment: Optional[str] = None, user_id: Optional[str] = None
     ) -> None:
         """
         Terminate candidacy
@@ -441,14 +436,16 @@ class EventSourcedCandidacy:
                 state["terminated_at"] = event.timestamp
 
             elif isinstance(event, ContactAdded):
-                state["contacts"].append({
-                    "contact_id": event.data["contact_id"],
-                    "type": event.data["type"],
-                    "scheduled_at": event.data.get("scheduled_at"),
-                    "interviewer_ids": event.data.get("interviewer_ids", []),
-                    "title": event.data.get("title"),
-                    "added_at": event.timestamp,
-                })
+                state["contacts"].append(
+                    {
+                        "contact_id": event.data["contact_id"],
+                        "type": event.data["type"],
+                        "scheduled_at": event.data.get("scheduled_at"),
+                        "interviewer_ids": event.data.get("interviewer_ids", []),
+                        "title": event.data.get("title"),
+                        "added_at": event.timestamp,
+                    }
+                )
 
             elif isinstance(event, ContactUpdated):
                 # Find and update contact
@@ -459,36 +456,41 @@ class EventSourcedCandidacy:
                         break
 
             elif isinstance(event, FileUploaded):
-                state["files"].append({
-                    "file_id": event.data["file_id"],
-                    "file_name": event.data["file_name"],
-                    "file_type": event.data["file_type"],
-                    "file_size": event.data.get("file_size"),
-                    "uploaded_at": event.timestamp,
-                })
+                state["files"].append(
+                    {
+                        "file_id": event.data["file_id"],
+                        "file_name": event.data["file_name"],
+                        "file_type": event.data["file_type"],
+                        "file_size": event.data.get("file_size"),
+                        "uploaded_at": event.timestamp,
+                    }
+                )
 
             elif isinstance(event, TimelineCommentAdded):
-                state["timeline_comments"].append({
-                    "comment_id": event.data["comment_id"],
-                    "comment": event.data["comment"],
-                    "format": event.data.get("format", "text/plain"),
-                    "added_at": event.timestamp,
-                    "added_by": event.metadata.get("user_id"),
-                })
+                state["timeline_comments"].append(
+                    {
+                        "comment_id": event.data["comment_id"],
+                        "comment": event.data["comment"],
+                        "format": event.data.get("format", "text/plain"),
+                        "added_at": event.timestamp,
+                        "added_by": event.metadata.get("user_id"),
+                    }
+                )
 
             elif isinstance(event, AssignmentAdded):
-                state["assignments"].append({
-                    "user_id": event.data["user_id"],
-                    "role": event.data["role"],
-                    "assigned_at": event.timestamp,
-                })
+                state["assignments"].append(
+                    {
+                        "user_id": event.data["user_id"],
+                        "role": event.data["role"],
+                        "assigned_at": event.timestamp,
+                    }
+                )
 
             elif isinstance(event, AssignmentRemoved):
                 # Remove assignment
                 user_id = event.data["user_id"]
                 state["assignments"] = [
-                    a for a in state["assignments"]
-                    if a["user_id"] != user_id
+                    a for a in state["assignments"] if a["user_id"] != user_id
                 ]
 
         return state

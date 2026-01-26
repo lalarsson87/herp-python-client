@@ -11,14 +11,13 @@ Features:
 - Event replay for failed events
 """
 
-import time
 import json
-from typing import Dict, Any, Callable, Optional, List
-from dataclasses import dataclass, field
-from datetime import datetime, timedelta
+import time
 from collections import deque
-from ...utils.logging import get_logger
+from dataclasses import dataclass, field
+from typing import Any, Callable, Dict, List, Optional
 
+from ...utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -212,7 +211,9 @@ class WebhookRouter:
 
                 # Success
                 self.processed_count += 1
-                logger.debug(f"Successfully processed event with {route.event_type} handler")
+                logger.debug(
+                    f"Successfully processed event with {route.event_type} handler"
+                )
                 return
 
             except Exception as e:
@@ -231,7 +232,7 @@ class WebhookRouter:
                     self.failed_count += 1
                     logger.error(
                         f"Max retries exceeded for {payload.get('event')}",
-                        exc_info=True
+                        exc_info=True,
                     )
 
                     # Add to dead letter queue
@@ -243,7 +244,9 @@ class WebhookRouter:
                             route=route,
                         )
                         self.dead_letter_queue.append(failed_event)
-                        logger.debug(f"Added event to DLQ (size={len(self.dead_letter_queue)})")
+                        logger.debug(
+                            f"Added event to DLQ (size={len(self.dead_letter_queue)})"
+                        )
 
     def get_dead_letter_queue(self) -> List[FailedEvent]:
         """
@@ -381,7 +384,9 @@ class AsyncWebhookRouter:
 
         return matching
 
-    async def _process_route(self, payload: Dict[str, Any], route: WebhookRoute) -> None:
+    async def _process_route(
+        self, payload: Dict[str, Any], route: WebhookRoute
+    ) -> None:
         """Process route with retry logic asynchronously"""
         import asyncio
 
@@ -395,7 +400,9 @@ class AsyncWebhookRouter:
 
                 # Success
                 self.processed_count += 1
-                logger.debug(f"Successfully processed event with {route.event_type} handler")
+                logger.debug(
+                    f"Successfully processed event with {route.event_type} handler"
+                )
                 return
 
             except Exception as e:
@@ -414,7 +421,7 @@ class AsyncWebhookRouter:
                     self.failed_count += 1
                     logger.error(
                         f"Max retries exceeded for {payload.get('event')}",
-                        exc_info=True
+                        exc_info=True,
                     )
 
                     # Add to dead letter queue
@@ -426,7 +433,9 @@ class AsyncWebhookRouter:
                             route=route,
                         )
                         self.dead_letter_queue.append(failed_event)
-                        logger.debug(f"Added event to DLQ (size={len(self.dead_letter_queue)})")
+                        logger.debug(
+                            f"Added event to DLQ (size={len(self.dead_letter_queue)})"
+                        )
 
     def get_dead_letter_queue(self) -> List[FailedEvent]:
         """Get failed events from dead letter queue"""

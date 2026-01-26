@@ -12,13 +12,13 @@ Supports:
 - Serialization to REST params, GraphQL, etc.
 """
 
-from typing import Dict, Any, List, Optional, Union, Literal
 from datetime import datetime
 from enum import Enum
 
 
 class FilterOperator(str, Enum):
     """Filter operators for field comparisons"""
+
     EQUALS = "eq"
     NOT_EQUALS = "ne"
     CONTAINS = "contains"
@@ -38,6 +38,7 @@ class FilterOperator(str, Enum):
 
 class LogicalOperator(str, Enum):
     """Logical operators for combining filters"""
+
     AND = "and"
     OR = "or"
     NOT = "not"
@@ -53,12 +54,7 @@ class FieldFilter:
         FieldFilter("created_at", FilterOperator.BETWEEN, ["2026-01-01", "2026-12-31"])
     """
 
-    def __init__(
-        self,
-        field: str,
-        operator: FilterOperator,
-        value: Any = None
-    ):
+    def __init__(self, field: str, operator: FilterOperator, value: Any = None):
         """
         Initialize field filter
 
@@ -216,7 +212,9 @@ class Query:
 
     def greater_than_or_equal(self, field: str, value: Any) -> "Query":
         """Add greater than or equal filter"""
-        self.filters.append(FieldFilter(field, FilterOperator.GREATER_THAN_OR_EQUAL, value))
+        self.filters.append(
+            FieldFilter(field, FilterOperator.GREATER_THAN_OR_EQUAL, value)
+        )
         return self
 
     def less_than(self, field: str, value: Any) -> "Query":
@@ -226,7 +224,9 @@ class Query:
 
     def less_than_or_equal(self, field: str, value: Any) -> "Query":
         """Add less than or equal filter"""
-        self.filters.append(FieldFilter(field, FilterOperator.LESS_THAN_OR_EQUAL, value))
+        self.filters.append(
+            FieldFilter(field, FilterOperator.LESS_THAN_OR_EQUAL, value)
+        )
         return self
 
     def between(self, field: str, min_value: Any, max_value: Any) -> "Query":
@@ -241,7 +241,9 @@ class Query:
         Returns:
             Query for chaining
         """
-        self.filters.append(FieldFilter(field, FilterOperator.BETWEEN, [min_value, max_value]))
+        self.filters.append(
+            FieldFilter(field, FilterOperator.BETWEEN, [min_value, max_value])
+        )
         return self
 
     def is_null(self, field: str) -> "Query":
@@ -314,7 +316,7 @@ class Query:
             "filters": [
                 f.to_dict() if isinstance(f, FieldFilter) else f.to_dict()
                 for f in self.filters
-            ]
+            ],
         }
 
         if self.negated:
@@ -332,7 +334,10 @@ class Query:
         params = {}
 
         # Simple case: only field filters with AND
-        if all(isinstance(f, FieldFilter) for f in self.filters) and self.logical_operator == LogicalOperator.AND:
+        if (
+            all(isinstance(f, FieldFilter) for f in self.filters)
+            and self.logical_operator == LogicalOperator.AND
+        ):
             for filter in self.filters:
                 if isinstance(filter, FieldFilter):
                     param_key = f"{filter.field}__{filter.operator.value}"
@@ -388,7 +393,9 @@ class CandidacyQuery(Query):
         """Filter by multiple hiring steps (OR)"""
         return self.in_list("step", steps)
 
-    def by_status(self, status: Literal["active", "hired", "terminated"]) -> "CandidacyQuery":
+    def by_status(
+        self, status: Literal["active", "hired", "terminated"]
+    ) -> "CandidacyQuery":
         """Filter by status"""
         return self.equals("status", status)
 
@@ -429,9 +436,7 @@ class CandidacyQuery(Query):
         return self.less_than_or_equal("created_at", date)
 
     def created_between(
-        self,
-        start_date: Union[str, datetime],
-        end_date: Union[str, datetime]
+        self, start_date: Union[str, datetime], end_date: Union[str, datetime]
     ) -> "CandidacyQuery":
         """Filter by creation date range"""
         if isinstance(start_date, datetime):
@@ -456,6 +461,7 @@ class CandidacyQuery(Query):
 
 
 # Convenience functions
+
 
 def query() -> Query:
     """Create a new generic query"""

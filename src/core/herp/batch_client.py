@@ -10,25 +10,24 @@ Efficient bulk operations for HERP API with:
 - 10x performance improvement over sequential operations
 """
 
-import asyncio
 import time
-from typing import Dict, List, Any, Optional, Callable, TypeVar, Tuple
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
 from pathlib import Path
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
-from .client import HerpClient
-from ..utils.logging import get_logger
 from ..observability.metrics import get_metrics_collector
-from ..errors.exceptions import HerpAPIError, is_transient_error
+from ..utils.logging import get_logger
+from .client import HerpClient
 
 logger = get_logger(__name__)
-T = TypeVar('T')
+T = TypeVar("T")
 
 
 @dataclass
 class BatchResult:
     """Result of a batch operation"""
+
     successful: List[Any] = field(default_factory=list)
     failed: Dict[str, str] = field(default_factory=dict)  # id -> error message
     total: int = 0
@@ -82,7 +81,7 @@ class BatchHerpClient:
         client: HerpClient,
         max_workers: int = 10,
         retry_transient: bool = True,
-        max_retries: int = 3
+        max_retries: int = 3,
     ):
         """
         Initialize batch client
@@ -107,10 +106,7 @@ class BatchHerpClient:
         )
 
     def _execute_with_retry(
-        self,
-        operation: Callable[[], T],
-        item_id: str,
-        operation_name: str
+        self, operation: Callable[[], T], item_id: str, operation_name: str
     ) -> Tuple[Optional[T], Optional[str]]:
         """
         Execute an operation with automatic retry on transient errors
@@ -144,9 +140,13 @@ class BatchHerpClient:
                 last_error = str(e)
 
                 # Check if we should retry
-                if self.retry_transient and is_transient_error(e) and retries < self.max_retries:
+                if (
+                    self.retry_transient
+                    and is_transient_error(e)
+                    and retries < self.max_retries
+                ):
                     retries += 1
-                    delay = min(2 ** retries, 10)  # Exponential backoff, max 10s
+                    delay = min(2**retries, 10)  # Exponential backoff, max 10s
 
                     logger.warning(
                         f"{operation_name} failed for {item_id} "
@@ -158,9 +158,7 @@ class BatchHerpClient:
                     continue
                 else:
                     # Non-transient error or max retries exceeded
-                    logger.error(
-                        f"{operation_name} failed for {item_id}: {e}"
-                    )
+                    logger.error(f"{operation_name} failed for {item_id}: {e}")
                     return None, last_error
 
         return None, last_error
@@ -168,7 +166,7 @@ class BatchHerpClient:
     def fetch_candidacies_batch(
         self,
         candidacy_ids: List[str],
-        progress_callback: Optional[Callable[[int, int], None]] = None
+        progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> BatchResult:
         """
         Fetch multiple candidacies concurrently
@@ -192,19 +190,20 @@ class BatchHerpClient:
 
         logger.info(f"Starting batch fetch for {len(candidacy_ids)} candidacies")
 
-        def fetch_one(candidacy_id: str) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+        def fetch_one(
+            candidacy_id: str,
+        ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
             """Fetch a single candidacy"""
             return self._execute_with_retry(
                 lambda: self.client.get_candidacy(candidacy_id),
                 candidacy_id,
-                "fetch_candidacy"
+                "fetch_candidacy",
             )
 
         # Execute concurrently
         with ThreadPoolExecutor(max_workers=self.max_workers) as executor:
             future_to_id = {
-                executor.submit(fetch_one, cid): cid
-                for cid in candidacy_ids
+                executor.submit(fetch_one, cid): cid for cid in candidacy_ids
             }
 
             completed = 0
@@ -227,20 +226,16 @@ class BatchHerpClient:
 
         # Record metrics
         self.metrics.increment_counter(
-            "herp.batch.fetch_candidacies.total",
-            value=result.total
+            "herp.batch.fetch_candidacies.total", value=result.total
         )
         self.metrics.increment_counter(
-            "herp.batch.fetch_candidacies.successful",
-            value=len(result.successful)
+            "herp.batch.fetch_candidacies.successful", value=len(result.successful)
         )
         self.metrics.increment_counter(
-            "herp.batch.fetch_candidacies.failed",
-            value=len(result.failed)
+            "herp.batch.fetch_candidacies.failed", value=len(result.failed)
         )
         self.metrics.record_histogram(
-            "herp.batch.fetch_candidacies.duration_seconds",
-            result.duration_seconds
+            "herp.batch.fetch_candidacies.duration_seconds", result.duration_seconds
         )
 
         logger.info(
@@ -253,7 +248,7 @@ class BatchHerpClient:
     def create_candidacies_batch(
         self,
         candidacies_data: List[Dict[str, Any]],
-        progress_callback: Optional[Callable[[int, int], None]] = None
+        progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> BatchResult:
         """
         Create multiple candidacies concurrently
@@ -278,8 +273,7 @@ class BatchHerpClient:
         logger.info(f"Starting batch create for {len(candidacies_data)} candidacies")
 
         def create_one(
-            candidacy_data: Dict[str, Any],
-            index: int
+            candidacy_data: Dict[str, Any], index: int
         ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
             """Create a single candidacy"""
             # Use index as identifier for error tracking
@@ -287,7 +281,7 @@ class BatchHerpClient:
             return self._execute_with_retry(
                 lambda: self.client.create_candidacy(candidacy_data),
                 item_id,
-                "create_candidacy"
+                "create_candidacy",
             )
 
         # Execute concurrently
@@ -316,16 +310,13 @@ class BatchHerpClient:
 
         # Record metrics
         self.metrics.increment_counter(
-            "herp.batch.create_candidacies.total",
-            value=result.total
+            "herp.batch.create_candidacies.total", value=result.total
         )
         self.metrics.increment_counter(
-            "herp.batch.create_candidacies.successful",
-            value=len(result.successful)
+            "herp.batch.create_candidacies.successful", value=len(result.successful)
         )
         self.metrics.increment_counter(
-            "herp.batch.create_candidacies.failed",
-            value=len(result.failed)
+            "herp.batch.create_candidacies.failed", value=len(result.failed)
         )
 
         logger.info(f"Batch create completed: {result}")
@@ -335,7 +326,7 @@ class BatchHerpClient:
     def update_candidacies_batch(
         self,
         updates: List[Tuple[str, str, Dict[str, Any]]],
-        progress_callback: Optional[Callable[[int, int], None]] = None
+        progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> BatchResult:
         """
         Update candidacy steps for multiple candidacies concurrently
@@ -360,15 +351,13 @@ class BatchHerpClient:
         logger.info(f"Starting batch update for {len(updates)} candidacies")
 
         def update_one(
-            candidacy_id: str,
-            step: str,
-            data: Dict[str, Any]
+            candidacy_id: str, step: str, data: Dict[str, Any]
         ) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
             """Update a single candidacy step"""
             return self._execute_with_retry(
                 lambda: self.client.update_candidacy_step(candidacy_id, step, data),
                 candidacy_id,
-                "update_candidacy_step"
+                "update_candidacy_step",
             )
 
         # Execute concurrently
@@ -397,12 +386,10 @@ class BatchHerpClient:
 
         # Record metrics
         self.metrics.increment_counter(
-            "herp.batch.update_candidacies.total",
-            value=result.total
+            "herp.batch.update_candidacies.total", value=result.total
         )
         self.metrics.increment_counter(
-            "herp.batch.update_candidacies.successful",
-            value=len(result.successful)
+            "herp.batch.update_candidacies.successful", value=len(result.successful)
         )
 
         logger.info(f"Batch update completed: {result}")
@@ -413,7 +400,7 @@ class BatchHerpClient:
         self,
         file_requests: List[Tuple[str, str]],  # (candidacy_id, file_id)
         output_dir: Path,
-        progress_callback: Optional[Callable[[int, int], None]] = None
+        progress_callback: Optional[Callable[[int, int], None]] = None,
     ) -> BatchResult:
         """
         Download multiple files concurrently
@@ -445,8 +432,7 @@ class BatchHerpClient:
         logger.info(f"Starting batch download for {len(file_requests)} files")
 
         def download_one(
-            candidacy_id: str,
-            file_id: str
+            candidacy_id: str, file_id: str
         ) -> Tuple[Optional[Path], Optional[str]]:
             """Download a single file"""
             try:
@@ -473,13 +459,17 @@ class BatchHerpClient:
                 file_path, error = future.result()
 
                 if file_path:
-                    result.successful.append({
-                        'candidacy_id': candidacy_id,
-                        'file_id': file_id,
-                        'path': str(file_path)
-                    })
+                    result.successful.append(
+                        {
+                            "candidacy_id": candidacy_id,
+                            "file_id": file_id,
+                            "path": str(file_path),
+                        }
+                    )
                 else:
-                    result.failed[f"{candidacy_id}_{file_id}"] = error or "Unknown error"
+                    result.failed[f"{candidacy_id}_{file_id}"] = (
+                        error or "Unknown error"
+                    )
 
                 completed += 1
 
@@ -490,12 +480,10 @@ class BatchHerpClient:
 
         # Record metrics
         self.metrics.increment_counter(
-            "herp.batch.download_files.total",
-            value=result.total
+            "herp.batch.download_files.total", value=result.total
         )
         self.metrics.increment_counter(
-            "herp.batch.download_files.successful",
-            value=len(result.successful)
+            "herp.batch.download_files.successful", value=len(result.successful)
         )
 
         logger.info(f"Batch download completed: {result}")

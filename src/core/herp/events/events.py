@@ -7,10 +7,10 @@ Defines immutable event types for candidacy changes.
 All events are immutable and represent facts that have happened.
 """
 
-from typing import Dict, Any, Optional, List
-from datetime import datetime
-from dataclasses import dataclass, field
 import uuid
+from dataclasses import dataclass, field
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 @dataclass(frozen=True)
@@ -29,6 +29,7 @@ class Event:
         metadata: Additional metadata (user_id, correlation_id, etc.)
         version: Event version for schema evolution
     """
+
     event_id: str = field(default_factory=lambda: str(uuid.uuid4()))
     event_type: str = ""
     aggregate_id: str = ""
@@ -66,6 +67,7 @@ class Event:
 @dataclass(frozen=True)
 class CandidacyEvent(Event):
     """Base class for candidacy-related events"""
+
     pass
 
 
@@ -83,6 +85,7 @@ class CandidacyCreated(CandidacyEvent):
         tags: Initial tags
         custom_fields: Custom field values
     """
+
     event_type: str = field(default="CandidacyCreated", init=False)
 
     @classmethod
@@ -124,6 +127,7 @@ class CandidacyStepChanged(CandidacyEvent):
         to_step: New step
         comment: Optional comment about the change
     """
+
     event_type: str = field(default="CandidacyStepChanged", init=False)
 
     @classmethod
@@ -157,6 +161,7 @@ class CandidacyStatusChanged(CandidacyEvent):
         to_status: New status
         reason: Reason for change
     """
+
     event_type: str = field(default="CandidacyStatusChanged", init=False)
 
     @classmethod
@@ -190,6 +195,7 @@ class CandidacyTerminated(CandidacyEvent):
         comment: Optional comment
         final_step: Step at termination
     """
+
     event_type: str = field(default="CandidacyTerminated", init=False)
 
     @classmethod
@@ -225,6 +231,7 @@ class ContactAdded(CandidacyEvent):
         interviewer_ids: List of interviewer user IDs
         title: Contact title
     """
+
     event_type: str = field(default="ContactAdded", init=False)
 
     @classmethod
@@ -261,6 +268,7 @@ class ContactUpdated(CandidacyEvent):
         contact_id: Contact ID
         changes: Dictionary of changed fields
     """
+
     event_type: str = field(default="ContactUpdated", init=False)
 
     @classmethod
@@ -293,6 +301,7 @@ class FileUploaded(CandidacyEvent):
         file_type: File type (resume, career_summary, etc.)
         file_size: File size in bytes
     """
+
     event_type: str = field(default="FileUploaded", init=False)
 
     @classmethod
@@ -328,6 +337,7 @@ class TimelineCommentAdded(CandidacyEvent):
         comment: Comment text
         format: Comment format (text/plain, text/markdown)
     """
+
     event_type: str = field(default="TimelineCommentAdded", init=False)
 
     @classmethod
@@ -360,6 +370,7 @@ class AssignmentAdded(CandidacyEvent):
         user_id: Assigned user ID
         role: User role (recruiter, hiring_manager, interviewer)
     """
+
     event_type: str = field(default="AssignmentAdded", init=False)
 
     @classmethod
@@ -389,6 +400,7 @@ class AssignmentRemoved(CandidacyEvent):
     Data:
         user_id: Unassigned user ID
     """
+
     event_type: str = field(default="AssignmentRemoved", init=False)
 
     @classmethod

@@ -6,14 +6,12 @@ Async version of file upload/download operations.
 """
 
 import asyncio
-from typing import Dict, Any, List, Optional, BinaryIO
 from pathlib import Path
 
-from ..utils.validators import validate_list_response, validate_single_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response, validate_single_response
 from .async_base_client import AsyncHerpBaseClient
-from .schemas import HerpFilesListResponse, HerpFileResponse
-
+from .schemas import HerpFileResponse, HerpFilesListResponse
 
 logger = get_logger(__name__)
 
@@ -54,9 +52,7 @@ class AsyncFilesAPI:
         return data.get("files", data.get("data", []))
 
     async def list_for_multiple(
-        self,
-        candidacy_ids: List[str],
-        max_concurrency: int = 10
+        self, candidacy_ids: List[str], max_concurrency: int = 10
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Batch fetch files for multiple candidacies (async)
@@ -92,10 +88,9 @@ class AsyncFilesAPI:
             results[candidacy_id] = files
             if error:
                 errors[candidacy_id] = error
-                if hasattr(self.client, 'metrics'):
+                if hasattr(self.client, "metrics"):
                     self.client.metrics.increment_counter(
-                        "herp.batch.files.errors",
-                        labels={"error": "fetch_failed"}
+                        "herp.batch.files.errors", labels={"error": "fetch_failed"}
                     )
 
         # Log summary
@@ -107,10 +102,9 @@ class AsyncFilesAPI:
         )
 
         # Record metrics
-        if hasattr(self.client, 'metrics'):
+        if hasattr(self.client, "metrics"):
             self.client.metrics.increment_counter(
-                "herp.batch.files.operations",
-                labels={"status": "success"}
+                "herp.batch.files.operations", labels={"status": "success"}
             )
 
         return results
@@ -121,7 +115,7 @@ class AsyncFilesAPI:
         candidacy_id: str,
         file_path: str,
         file_type: str = "other",
-        description: Optional[str] = None
+        description: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Upload file to candidacy
@@ -151,28 +145,21 @@ class AsyncFilesAPI:
             file_content = f.read()
 
         # Prepare multipart upload
-        files = {
-            "file": (path.name, file_content, "application/octet-stream")
-        }
+        files = {"file": (path.name, file_content, "application/octet-stream")}
         data_fields = {"type": file_type}
         if description:
             data_fields["description"] = description
 
         # Upload
         response_data = await self.client.post(
-            f"/v1/candidacies/{candidacy_id}/files",
-            files=files,
-            data=data_fields
+            f"/v1/candidacies/{candidacy_id}/files", files=files, data=data_fields
         )
 
         logger.info(f"Uploaded {path.name} for candidacy {candidacy_id}")
         return response_data.get("file", response_data.get("data", response_data))
 
     async def download(
-        self,
-        candidacy_id: str,
-        file_id: str,
-        save_path: Optional[str] = None
+        self, candidacy_id: str, file_id: str, save_path: Optional[str] = None
     ) -> bytes:
         """
         Download file from candidacy
@@ -213,7 +200,5 @@ class AsyncFilesAPI:
             candidacy_id: Candidacy ID
             file_id: File ID
         """
-        await self.client.delete(
-            f"/v1/candidacies/{candidacy_id}/files/{file_id}"
-        )
+        await self.client.delete(f"/v1/candidacies/{candidacy_id}/files/{file_id}")
         logger.info(f"Deleted file {file_id} from candidacy {candidacy_id}")

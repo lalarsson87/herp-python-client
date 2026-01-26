@@ -6,13 +6,12 @@ Provides async bulk operations for HERP API with high concurrency.
 """
 
 import asyncio
-from typing import Dict, Any, List, Optional
 from dataclasses import dataclass
+from typing import Any, Dict, List, Optional
 
 from ..utils.config import HerpConfig
 from ..utils.logging import get_logger
 from .async_client import AsyncHerpClient
-
 
 logger = get_logger(__name__)
 
@@ -29,6 +28,7 @@ class AsyncBatchResult:
         success_count: Number of successful operations
         failure_count: Number of failed operations
     """
+
     successful: List[Dict[str, Any]]
     failed: List[Dict[str, Any]]
     total: int
@@ -71,12 +71,7 @@ class AsyncBatchHerpClient:
         - Automatic retry on transient errors
     """
 
-    def __init__(
-        self,
-        config: HerpConfig,
-        max_concurrency: int = 10,
-        **client_kwargs
-    ):
+    def __init__(self, config: HerpConfig, max_concurrency: int = 10, **client_kwargs):
         """
         Initialize async batch client
 
@@ -104,10 +99,7 @@ class AsyncBatchHerpClient:
             await self._client.__aexit__(exc_type, exc_val, exc_tb)
             self._client = None
 
-    async def fetch_candidacies(
-        self,
-        candidacy_ids: List[str]
-    ) -> AsyncBatchResult:
+    async def fetch_candidacies(self, candidacy_ids: List[str]) -> AsyncBatchResult:
         """
         Fetch multiple candidacies concurrently
 
@@ -154,12 +146,11 @@ class AsyncBatchHerpClient:
             failed=failed,
             total=len(candidacy_ids),
             success_count=len(successful),
-            failure_count=len(failed)
+            failure_count=len(failed),
         )
 
     async def create_candidacies(
-        self,
-        candidacy_data_list: List[Dict[str, Any]]
+        self, candidacy_data_list: List[Dict[str, Any]]
     ) -> AsyncBatchResult:
         """
         Create multiple candidacies concurrently
@@ -187,10 +178,7 @@ class AsyncBatchHerpClient:
                     return index, candidacy_data, str(e)
 
         # Create all concurrently
-        tasks = [
-            create_one(i, data)
-            for i, data in enumerate(candidacy_data_list)
-        ]
+        tasks = [create_one(i, data) for i, data in enumerate(candidacy_data_list)]
         results = await asyncio.gather(*tasks)
 
         # Process results
@@ -210,12 +198,11 @@ class AsyncBatchHerpClient:
             failed=failed,
             total=len(candidacy_data_list),
             success_count=len(successful),
-            failure_count=len(failed)
+            failure_count=len(failed),
         )
 
     async def update_candidacy_steps(
-        self,
-        updates: List[Dict[str, Any]]
+        self, updates: List[Dict[str, Any]]
     ) -> AsyncBatchResult:
         """
         Update hiring steps for multiple candidacies concurrently
@@ -249,7 +236,7 @@ class AsyncBatchHerpClient:
                     candidacy = await self._client.candidacies.update_step(
                         candidacy_id=update["candidacy_id"],
                         step=update["step"],
-                        comment=update.get("comment")
+                        comment=update.get("comment"),
                     )
                     return update["candidacy_id"], candidacy, None
                 except Exception as e:
@@ -265,7 +252,9 @@ class AsyncBatchHerpClient:
         # Process results
         for candidacy_id, result, error in results:
             if error:
-                failed.append({"candidacy_id": candidacy_id, "data": result, "error": error})
+                failed.append(
+                    {"candidacy_id": candidacy_id, "data": result, "error": error}
+                )
             else:
                 successful.append(result)
 
@@ -279,12 +268,11 @@ class AsyncBatchHerpClient:
             failed=failed,
             total=len(updates),
             success_count=len(successful),
-            failure_count=len(failed)
+            failure_count=len(failed),
         )
 
     async def fetch_contacts_for_multiple(
-        self,
-        candidacy_ids: List[str]
+        self, candidacy_ids: List[str]
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Fetch contacts for multiple candidacies concurrently
@@ -299,13 +287,11 @@ class AsyncBatchHerpClient:
             raise RuntimeError("Client not initialized. Use async context manager.")
 
         return await self._client.contacts.list_for_multiple(
-            candidacy_ids,
-            max_concurrency=self.max_concurrency
+            candidacy_ids, max_concurrency=self.max_concurrency
         )
 
     async def fetch_files_for_multiple(
-        self,
-        candidacy_ids: List[str]
+        self, candidacy_ids: List[str]
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Fetch files for multiple candidacies concurrently
@@ -320,6 +306,5 @@ class AsyncBatchHerpClient:
             raise RuntimeError("Client not initialized. Use async context manager.")
 
         return await self._client.files.list_for_multiple(
-            candidacy_ids,
-            max_concurrency=self.max_concurrency
+            candidacy_ids, max_concurrency=self.max_concurrency
         )

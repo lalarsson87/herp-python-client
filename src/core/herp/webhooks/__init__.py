@@ -36,35 +36,31 @@ Usage:
     router.route(payload)
 """
 
-from .verifier import (
-    WebhookVerifier,
-    WebhookVerificationError,
-    verify_webhook,
-)
-
 from .handlers import (
-    WebhookEvent,
-    WebhookHandler,
     AsyncWebhookHandler,
     HandlerFunc,
+    WebhookEvent,
+    WebhookHandler,
     log_event_handler,
     print_event_handler,
 )
-
 from .router import (
-    WebhookRoute,
-    WebhookRouter,
     AsyncWebhookRouter,
     FailedEvent,
+    WebhookRoute,
+    WebhookRouter,
 )
-
+from .verifier import (
+    WebhookVerificationError,
+    WebhookVerifier,
+    verify_webhook,
+)
 
 __all__ = [
     # Verifier
     "WebhookVerifier",
     "WebhookVerificationError",
     "verify_webhook",
-
     # Handlers
     "WebhookEvent",
     "WebhookHandler",
@@ -72,7 +68,6 @@ __all__ = [
     "HandlerFunc",
     "log_event_handler",
     "print_event_handler",
-
     # Router
     "WebhookRoute",
     "WebhookRouter",

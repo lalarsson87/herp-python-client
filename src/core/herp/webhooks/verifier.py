@@ -11,18 +11,19 @@ HERP webhooks use HMAC-SHA256 for signature verification:
 - Computed as: HMAC-SHA256(secret, timestamp + payload)
 """
 
-import hmac
 import hashlib
+import hmac
 import time
 from typing import Optional
-from ...utils.logging import get_logger
 
+from ...utils.logging import get_logger
 
 logger = get_logger(__name__)
 
 
 class WebhookVerificationError(Exception):
     """Raised when webhook verification fails"""
+
     pass
 
 
@@ -41,11 +42,7 @@ class WebhookVerifier:
         )
     """
 
-    def __init__(
-        self,
-        webhook_secret: str,
-        tolerance_seconds: int = 300  # 5 minutes
-    ):
+    def __init__(self, webhook_secret: str, tolerance_seconds: int = 300):  # 5 minutes
         """
         Initialize webhook verifier
 
@@ -53,15 +50,10 @@ class WebhookVerifier:
             webhook_secret: Webhook secret from HERP settings
             tolerance_seconds: Maximum age of webhook in seconds (prevents replay attacks)
         """
-        self.webhook_secret = webhook_secret.encode('utf-8')
+        self.webhook_secret = webhook_secret.encode("utf-8")
         self.tolerance_seconds = tolerance_seconds
 
-    def verify(
-        self,
-        payload: bytes,
-        signature: str,
-        timestamp: str
-    ) -> None:
+    def verify(self, payload: bytes, signature: str, timestamp: str) -> None:
         """
         Verify webhook signature
 
@@ -81,10 +73,10 @@ class WebhookVerifier:
 
         # Compare signatures (constant-time comparison)
         if not hmac.compare_digest(expected_signature, signature):
-            logger.warning(f"Webhook signature verification failed")
+            logger.warning("Webhook signature verification failed")
             raise WebhookVerificationError("Invalid webhook signature")
 
-        logger.debug(f"Webhook signature verified successfully")
+        logger.debug("Webhook signature verified successfully")
 
     def _verify_timestamp(self, timestamp: str) -> None:
         """
@@ -108,15 +100,11 @@ class WebhookVerifier:
             logger.warning(
                 f"Webhook timestamp too old: {age}s (tolerance: {self.tolerance_seconds}s)"
             )
-            raise WebhookVerificationError(
-                f"Webhook timestamp too old: {age}s"
-            )
+            raise WebhookVerificationError(f"Webhook timestamp too old: {age}s")
 
         if age < -self.tolerance_seconds:
             logger.warning(f"Webhook timestamp from future: {age}s")
-            raise WebhookVerificationError(
-                "Webhook timestamp from future"
-            )
+            raise WebhookVerificationError("Webhook timestamp from future")
 
     def _compute_signature(self, payload: bytes, timestamp: str) -> str:
         """
@@ -130,22 +118,17 @@ class WebhookVerifier:
             Hex-encoded signature
         """
         # Signed payload: timestamp + payload
-        signed_payload = timestamp.encode('utf-8') + payload
+        signed_payload = timestamp.encode("utf-8") + payload
 
         # Compute HMAC-SHA256
         signature = hmac.new(
-            self.webhook_secret,
-            signed_payload,
-            hashlib.sha256
+            self.webhook_secret, signed_payload, hashlib.sha256
         ).hexdigest()
 
         return signature
 
     def verify_or_none(
-        self,
-        payload: bytes,
-        signature: Optional[str],
-        timestamp: Optional[str]
+        self, payload: bytes, signature: Optional[str], timestamp: Optional[str]
     ) -> bool:
         """
         Verify webhook signature, returning boolean instead of raising
@@ -173,7 +156,7 @@ def verify_webhook(
     signature: str,
     timestamp: str,
     webhook_secret: str,
-    tolerance_seconds: int = 300
+    tolerance_seconds: int = 300,
 ) -> None:
     """
     Convenience function to verify webhook

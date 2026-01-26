@@ -7,21 +7,21 @@ Used as base for all specialized API clients.
 """
 
 import time
-import requests
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
 
-from ..utils.config import HerpConfig
-from ..utils.logging import get_logger
+import requests
+
 from ..cache import CacheManager
 from ..errors.exceptions import (
     HerpAPIError,
-    HerpRateLimitError,
     HerpAuthenticationError,
+    HerpRateLimitError,
 )
 from ..observability.metrics import MetricsCollector, get_metrics_collector
-from ..utils.circuit_breaker import CircuitBreakerWrapper, CircuitBreakerConfig
+from ..utils.circuit_breaker import CircuitBreakerConfig, CircuitBreakerWrapper
+from ..utils.config import HerpConfig
+from ..utils.logging import get_logger
 from .rate_limiter import AdaptiveRateLimiter
-
 
 logger = get_logger(__name__)
 
@@ -40,7 +40,7 @@ class HerpBaseClient:
         cache_manager: Optional[CacheManager] = None,
         enable_circuit_breaker: bool = False,
         circuit_breaker_config: Optional[CircuitBreakerConfig] = None,
-        metrics_collector: Optional[MetricsCollector] = None
+        metrics_collector: Optional[MetricsCollector] = None,
     ):
         """
         Initialize base HERP client
@@ -55,9 +55,7 @@ class HerpBaseClient:
         self.config = config
         self.base_url = config.base_url
         self.cache_manager = cache_manager
-        self.rate_limiter = AdaptiveRateLimiter(
-            requests_per_minute=config.rate_limit
-        )
+        self.rate_limiter = AdaptiveRateLimiter(requests_per_minute=config.rate_limit)
         self.session = requests.Session()
         self.session.headers.update(self._get_headers())
 
@@ -69,9 +67,7 @@ class HerpBaseClient:
         self.circuit_breaker = None
         if enable_circuit_breaker:
             cb_config = circuit_breaker_config or CircuitBreakerConfig(
-                name="herp-api",
-                fail_max=5,
-                timeout_duration=60
+                name="herp-api", fail_max=5, timeout_duration=60
             )
             self.circuit_breaker = CircuitBreakerWrapper(cb_config)
             logger.info(f"Circuit breaker enabled for HERP API: {cb_config}")
@@ -80,14 +76,11 @@ class HerpBaseClient:
         """Get request headers with authentication"""
         return {
             "Authorization": f"Bearer {self.config.api_key}",
-            "Content-Type": "application/json"
+            "Content-Type": "application/json",
         }
 
     def _make_request_impl(
-        self,
-        method: str,
-        endpoint: str,
-        **kwargs
+        self, method: str, endpoint: str, **kwargs
     ) -> requests.Response:
         """
         Internal implementation of HTTP request with rate limiting and error handling
@@ -106,8 +99,8 @@ class HerpBaseClient:
             HerpAuthenticationError: On authentication errors
         """
         # Ensure endpoint starts with /
-        if not endpoint.startswith('/'):
-            endpoint = '/' + endpoint
+        if not endpoint.startswith("/"):
+            endpoint = "/" + endpoint
 
         url = f"{self.base_url}{endpoint}"
 
@@ -135,8 +128,12 @@ class HerpBaseClient:
                 endpoint=endpoint,
                 status_code=response.status_code,
                 duration_ms=duration_ms,
-                error=None if response.status_code < 400 else f"HTTP {response.status_code}",
-                labels={"api": "herp"}
+                error=(
+                    None
+                    if response.status_code < 400
+                    else f"HTTP {response.status_code}"
+                ),
+                labels={"api": "herp"},
             )
 
             # Handle errors
@@ -163,16 +160,11 @@ class HerpBaseClient:
                 status_code=0,
                 duration_ms=duration_ms,
                 error=str(e),
-                labels={"api": "herp", "error_type": type(e).__name__}
+                labels={"api": "herp", "error_type": type(e).__name__},
             )
             raise
 
-    def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        **kwargs
-    ) -> requests.Response:
+    def _make_request(self, method: str, endpoint: str, **kwargs) -> requests.Response:
         """
         Make HTTP request with optional circuit breaker protection
 
@@ -193,10 +185,7 @@ class HerpBaseClient:
         if self.circuit_breaker:
             # Call through circuit breaker
             return self.circuit_breaker.breaker.call(
-                self._make_request_impl,
-                method,
-                endpoint,
-                **kwargs
+                self._make_request_impl, method, endpoint, **kwargs
             )
         else:
             # Direct call without circuit breaker
@@ -219,7 +208,9 @@ class HerpBaseClient:
         """
         from ..errors import smart_retry
 
-        @smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+        @smart_retry(
+            max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+        )
         def _get():
             response = self._make_request("GET", endpoint, **kwargs)
             return response.json()
@@ -239,7 +230,9 @@ class HerpBaseClient:
         """
         from ..errors import smart_retry
 
-        @smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+        @smart_retry(
+            max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+        )
         def _post():
             response = self._make_request("POST", endpoint, **kwargs)
             return response.json()
@@ -259,7 +252,9 @@ class HerpBaseClient:
         """
         from ..errors import smart_retry
 
-        @smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+        @smart_retry(
+            max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+        )
         def _patch():
             response = self._make_request("PATCH", endpoint, **kwargs)
             return response.json()
@@ -279,7 +274,9 @@ class HerpBaseClient:
         """
         from ..errors import smart_retry
 
-        @smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+        @smart_retry(
+            max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+        )
         def _put():
             response = self._make_request("PUT", endpoint, **kwargs)
             return response.json()
@@ -299,7 +296,9 @@ class HerpBaseClient:
         """
         from ..errors import smart_retry
 
-        @smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+        @smart_retry(
+            max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+        )
         def _delete():
             response = self._make_request("DELETE", endpoint, **kwargs)
             return response.json() if response.content else {}

@@ -5,13 +5,12 @@ HERP Evaluations API Client
 Handles candidate evaluation operations for interview feedback.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
-from ..utils.validators import validate_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_response
 from .base_client import HerpBaseClient
 from .schemas import HerpEvaluationResponse
-
 
 logger = get_logger(__name__)
 
@@ -45,11 +44,7 @@ class EvaluationsAPI:
         """
         return self.client.get(f"/v1/evaluations/{evaluation_id}")
 
-    def submit(
-        self,
-        evaluation_id: str,
-        responses: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def submit(self, evaluation_id: str, responses: Dict[str, Any]) -> Dict[str, Any]:
         """
         Submit evaluation responses
 
@@ -64,6 +59,5 @@ class EvaluationsAPI:
             Uses PUT as per HERP API documentation (not PATCH)
         """
         return self.client.put(
-            f"/v1/evaluations/{evaluation_id}",
-            json={"responses": responses}
+            f"/v1/evaluations/{evaluation_id}", json={"responses": responses}
         )

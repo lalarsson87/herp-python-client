@@ -6,8 +6,8 @@ Fluent builder interfaces for constructing complex API requests.
 Provides type-safe, readable methods for creating candidacies, contacts, and evaluations.
 """
 
-from typing import Dict, Any, List, Optional
 from datetime import datetime
+from typing import Any, Dict, List, Optional
 
 
 class CandidacyBuilder:
@@ -332,15 +332,11 @@ class EvaluationResponseBuilder:
 
     def __init__(self):
         """Initialize evaluation builder with empty data"""
-        self._data: Dict[str, Any] = {
-            "questions": []
-        }
+        self._data: Dict[str, Any] = {"questions": []}
         self._question_map: Dict[str, int] = {}
 
     def answer_question(
-        self,
-        question_id: str,
-        answer: str
+        self, question_id: str, answer: str
     ) -> "EvaluationResponseBuilder":
         """
         Add text answer to a question
@@ -355,10 +351,7 @@ class EvaluationResponseBuilder:
         if question_id not in self._question_map:
             idx = len(self._data["questions"])
             self._question_map[question_id] = idx
-            self._data["questions"].append({
-                "id": question_id,
-                "answer": answer
-            })
+            self._data["questions"].append({"id": question_id, "answer": answer})
         else:
             idx = self._question_map[question_id]
             self._data["questions"][idx]["answer"] = answer
@@ -366,10 +359,7 @@ class EvaluationResponseBuilder:
         return self
 
     def score_question(
-        self,
-        question_id: str,
-        score: int,
-        max_score: Optional[int] = None
+        self, question_id: str, score: int, max_score: Optional[int] = None
     ) -> "EvaluationResponseBuilder":
         """
         Add numeric score to a question
@@ -385,10 +375,7 @@ class EvaluationResponseBuilder:
         if question_id not in self._question_map:
             idx = len(self._data["questions"])
             self._question_map[question_id] = idx
-            question_data = {
-                "id": question_id,
-                "score": score
-            }
+            question_data = {"id": question_id, "score": score}
             if max_score is not None:
                 question_data["max_score"] = max_score
             self._data["questions"].append(question_data)
@@ -401,9 +388,7 @@ class EvaluationResponseBuilder:
         return self
 
     def with_overall_score(
-        self,
-        score: int,
-        max_score: Optional[int] = None
+        self, score: int, max_score: Optional[int] = None
     ) -> "EvaluationResponseBuilder":
         """
         Set overall evaluation score
@@ -420,10 +405,7 @@ class EvaluationResponseBuilder:
             self._data["max_overall_score"] = max_score
         return self
 
-    def with_recommendation(
-        self,
-        recommendation: str
-    ) -> "EvaluationResponseBuilder":
+    def with_recommendation(self, recommendation: str) -> "EvaluationResponseBuilder":
         """
         Set hiring recommendation
 
@@ -473,4 +455,4 @@ class EvaluationResponseBuilder:
 
 # Convenience aliases for backward compatibility
 CandidateBuilder = CandidacyBuilder  # Alternative name
-InterviewBuilder = ContactBuilder     # Alternative name
+InterviewBuilder = ContactBuilder  # Alternative name

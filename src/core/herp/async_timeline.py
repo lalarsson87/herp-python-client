@@ -5,13 +5,12 @@ HERP Async Timeline API Client
 Async version of timeline comment operations.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Optional
 
-from ..utils.validators import validate_list_response, validate_single_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response, validate_single_response
 from .async_base_client import AsyncHerpBaseClient
-from .schemas import HerpTimelineCommentsListResponse, HerpTimelineCommentResponse
-
+from .schemas import HerpTimelineCommentResponse, HerpTimelineCommentsListResponse
 
 logger = get_logger(__name__)
 
@@ -50,10 +49,7 @@ class AsyncTimelineAPI:
 
     @validate_single_response(HerpTimelineCommentResponse, strict=False)
     async def add(
-        self,
-        candidacy_id: str,
-        comment: str,
-        format: str = "text/plain"
+        self, candidacy_id: str, comment: str, format: str = "text/plain"
     ) -> Dict[str, Any]:
         """
         Add timeline comment
@@ -81,8 +77,7 @@ class AsyncTimelineAPI:
         """
         comment_data = {"comment": comment, "format": format}
         data = await self.client.post(
-            f"/v1/candidacies/{candidacy_id}/timeline-comments",
-            json=comment_data
+            f"/v1/candidacies/{candidacy_id}/timeline-comments", json=comment_data
         )
         logger.info(f"Added timeline comment to candidacy {candidacy_id}")
         return data.get("timeline_comment", data.get("data", data))

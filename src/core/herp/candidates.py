@@ -6,17 +6,17 @@ Handles all candidacy-related operations including listing, searching,
 creating, updating, and managing candidate hiring stages.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Any, Dict, List, Optional
 
-from ..utils.validators import validate_response, validate_list_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response, validate_response
 from .base_client import HerpBaseClient
 from .pagination import HerpPaginator
+from .query_dsl import FieldFilter, FilterOperator, LogicalOperator, Query
 from .schemas import (
-    HerpCandidacyResponse,
     HerpCandidaciesListResponse,
+    HerpCandidacyResponse,
 )
-
 
 logger = get_logger(__name__)
 
@@ -39,10 +39,7 @@ class CandidaciesAPI:
 
     @validate_list_response(HerpCandidaciesListResponse, strict=False)
     def list(
-        self,
-        updated_since: Optional[str] = None,
-        page: int = 1,
-        limit: int = 50
+        self, updated_since: Optional[str] = None, page: int = 1, limit: int = 50
     ) -> List[Dict[str, Any]]:
         """
         List candidacies (single page)
@@ -70,7 +67,7 @@ class CandidaciesAPI:
         self,
         updated_since: Optional[str] = None,
         limit: int = 100,
-        max_pages: Optional[int] = None
+        max_pages: Optional[int] = None,
     ) -> HerpPaginator:
         """
         Iterate over all candidacies across all pages (memory efficient)
@@ -95,14 +92,14 @@ class CandidaciesAPI:
             fetch_function=self.list,
             limit=limit,
             max_pages=max_pages,
-            updated_since=updated_since
+            updated_since=updated_since,
         )
 
     def fetch_all(
         self,
         updated_since: Optional[str] = None,
         limit: int = 100,
-        max_pages: Optional[int] = None
+        max_pages: Optional[int] = None,
     ) -> List[Dict[str, Any]]:
         """
         Fetch all candidacies across all pages (loads into memory)
@@ -125,17 +122,15 @@ class CandidaciesAPI:
             >>> print(f"Total candidates: {len(all_candidacies)}")
         """
         paginator = self.iter(
-            updated_since=updated_since,
-            limit=limit,
-            max_pages=max_pages
+            updated_since=updated_since, limit=limit, max_pages=max_pages
         )
         return paginator.fetch_all()
 
     def search(
         self,
-        query: Optional["SearchQuery"] = None,
+        query: Optional[Query] = None,
         limit: Optional[int] = None,
-        **filters
+        **filters,
     ) -> List[Dict[str, Any]]:
         """
         Search candidacies with flexible filtering
@@ -173,7 +168,6 @@ class CandidaciesAPI:
             >>> # Using quick filters (legacy)
             >>> results = client.candidacies.search(name="John", status="active")
         """
-        from .query_dsl import Query, CandidacyQuery
 
         # If query is provided, use it
         if query is not None:
@@ -192,7 +186,9 @@ class CandidaciesAPI:
         logger.info(f"Search found {len(results)} candidacies matching query")
         return results
 
-    def _apply_query(self, query: Query, candidacies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_query(
+        self, query: Query, candidacies: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Apply query DSL to candidacies"""
         results = []
         for candidacy in candidacies:
@@ -202,7 +198,6 @@ class CandidaciesAPI:
 
     def _matches_query(self, query: Query, candidacy: Dict[str, Any]) -> bool:
         """Check if candidacy matches query"""
-        from .query_dsl import FieldFilter, FilterOperator, LogicalOperator
 
         # Handle empty query
         if not query.filters:
@@ -230,9 +225,8 @@ class CandidaciesAPI:
 
         return result
 
-    def _matches_filter(self, filter: "FieldFilter", candidacy: Dict[str, Any]) -> bool:
+    def _matches_filter(self, filter: FieldFilter, candidacy: Dict[str, Any]) -> bool:
         """Check if candidacy matches single filter"""
-        from .query_dsl import FilterOperator
 
         field_value = candidacy.get(filter.field)
         operator = filter.operator
@@ -263,7 +257,11 @@ class CandidaciesAPI:
         elif operator == FilterOperator.LESS_THAN_OR_EQUAL:
             return field_value <= filter_value if field_value else False
         elif operator == FilterOperator.BETWEEN:
-            if field_value and isinstance(filter_value, list) and len(filter_value) == 2:
+            if (
+                field_value
+                and isinstance(filter_value, list)
+                and len(filter_value) == 2
+            ):
                 return filter_value[0] <= field_value <= filter_value[1]
             return False
         elif operator == FilterOperator.IS_NULL:
@@ -273,7 +271,9 @@ class CandidaciesAPI:
         else:
             return True
 
-    def _apply_legacy_filters(self, candidacies: List[Dict[str, Any]], filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _apply_legacy_filters(
+        self, candidacies: List[Dict[str, Any]], filters: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Apply legacy quick filters"""
         results = []
         for candidacy in candidacies:
@@ -333,11 +333,7 @@ class CandidaciesAPI:
         """
         return self.client.post("/v1/candidacies", json=data)
 
-    def update_step(
-        self,
-        candidacy_id: str,
-        step: str
-    ) -> Dict[str, Any]:
+    def update_step(self, candidacy_id: str, step: str) -> Dict[str, Any]:
         """
         Update candidacy hiring step
 
@@ -349,15 +345,10 @@ class CandidaciesAPI:
             Updated candidacy record
         """
         return self.client.patch(
-            f"/v1/candidacies/{candidacy_id}/step",
-            json={"step": step}
+            f"/v1/candidacies/{candidacy_id}/step", json={"step": step}
         )
 
-    def terminate(
-        self,
-        candidacy_id: str,
-        termination_reason: str
-    ) -> Dict[str, Any]:
+    def terminate(self, candidacy_id: str, termination_reason: str) -> Dict[str, Any]:
         """
         Terminate candidacy
 
@@ -370,5 +361,5 @@ class CandidaciesAPI:
         """
         return self.client.patch(
             f"/v1/candidacies/{candidacy_id}/termination",
-            json={"terminationReason": termination_reason}
+            json={"terminationReason": termination_reason},
         )

@@ -5,60 +5,61 @@ Intelligent error classification for smart retry strategies.
 Only retries transient errors, fails fast on permanent errors.
 """
 
-import time
-import random
 import functools
 import logging
+import random
+import time
 from enum import Enum
-from typing import Callable, Tuple, Optional, Type
+from typing import Callable, Optional, Tuple, Type
 
 from ..constants import (
-    RETRY_DEFAULT_MAX_ATTEMPTS,
     RETRY_DEFAULT_BASE_DELAY,
+    RETRY_DEFAULT_MAX_ATTEMPTS,
     RETRY_MAX_DELAY,
     RETRY_MAX_TOTAL_DURATION,
-    RETRY_RATE_LIMIT_BASE_DELAY,
     RETRY_NETWORK_BASE_DELAY,
+    RETRY_RATE_LIMIT_BASE_DELAY,
 )
 from .exceptions import (
-    TransientError,
-    PermanentError,
-    HerpRateLimitError,
     HerpAuthenticationError,
-    HerpValidationError,
-    HerpNotFoundError,
-    HerpServerError,
     HerpNetworkError,
-    NotionRateLimitError,
+    HerpNotFoundError,
+    HerpRateLimitError,
+    HerpServerError,
+    HerpValidationError,
     NotionAuthenticationError,
-    NotionValidationError,
-    NotionNotFoundError,
-    NotionServerError,
     NotionNetworkError,
-    RetryError,
+    NotionNotFoundError,
+    NotionRateLimitError,
+    NotionServerError,
+    NotionValidationError,
+    PermanentError,
     RetryBudgetExceededError,
+    RetryError,
+    TransientError,
 )
-
 
 logger = logging.getLogger(__name__)
 
 
 class ErrorSeverity(Enum):
     """Error severity classification for retry strategy"""
+
     TRANSIENT = "transient"  # Temporary error, should retry
     PERMANENT = "permanent"  # Permanent error, fail fast
-    DEGRADED = "degraded"    # Service degraded but may recover
+    DEGRADED = "degraded"  # Service degraded but may recover
 
 
 class ErrorCategory(Enum):
     """Error category for fine-grained retry strategy"""
-    RATE_LIMIT = "rate_limit"          # Rate limiting errors
-    NETWORK = "network"                # Network connectivity errors
+
+    RATE_LIMIT = "rate_limit"  # Rate limiting errors
+    NETWORK = "network"  # Network connectivity errors
     AUTHENTICATION = "authentication"  # Auth/permission errors
-    VALIDATION = "validation"          # Invalid input/data errors
-    NOT_FOUND = "not_found"           # Resource not found errors
-    SERVER_ERROR = "server_error"     # Server-side errors
-    UNKNOWN = "unknown"               # Unknown/unclassified errors
+    VALIDATION = "validation"  # Invalid input/data errors
+    NOT_FOUND = "not_found"  # Resource not found errors
+    SERVER_ERROR = "server_error"  # Server-side errors
+    UNKNOWN = "unknown"  # Unknown/unclassified errors
 
 
 def classify_error(exception: Exception) -> Tuple[ErrorSeverity, ErrorCategory]:
@@ -119,51 +120,78 @@ def classify_error(exception: Exception) -> Tuple[ErrorSeverity, ErrorCategory]:
     error_type = type(exception).__name__.lower()
 
     # Check for HTTP status codes in exception message
-    has_status_code = False
     status_code = None
 
     # Common patterns for status codes in error messages
     for code in [400, 401, 403, 404, 429, 500, 502, 503, 504]:
         if str(code) in error_msg or f"http {code}" in error_msg:
             status_code = code
-            has_status_code = True
             break
 
     # Rate limiting errors (TRANSIENT)
     rate_limit_indicators = [
-        "rate limit", "too many requests", "quota exceeded",
-        "throttle", "rate exceeded"
+        "rate limit",
+        "too many requests",
+        "quota exceeded",
+        "throttle",
+        "rate exceeded",
     ]
-    if any(indicator in error_msg for indicator in rate_limit_indicators) or status_code == 429:
+    if (
+        any(indicator in error_msg for indicator in rate_limit_indicators)
+        or status_code == 429
+    ):
         logger.debug(f"Classified as TRANSIENT/RATE_LIMIT: {exception}")
         return (ErrorSeverity.TRANSIENT, ErrorCategory.RATE_LIMIT)
 
     # Authentication/Authorization errors (PERMANENT)
     auth_indicators = [
-        "unauthorized", "authentication failed", "invalid token",
-        "forbidden", "access denied", "permission denied",
-        "invalid api key", "invalid credentials"
+        "unauthorized",
+        "authentication failed",
+        "invalid token",
+        "forbidden",
+        "access denied",
+        "permission denied",
+        "invalid api key",
+        "invalid credentials",
     ]
-    if any(indicator in error_msg for indicator in auth_indicators) or status_code in [401, 403]:
+    if any(indicator in error_msg for indicator in auth_indicators) or status_code in [
+        401,
+        403,
+    ]:
         logger.debug(f"Classified as PERMANENT/AUTHENTICATION: {exception}")
         return (ErrorSeverity.PERMANENT, ErrorCategory.AUTHENTICATION)
 
     # Validation errors (PERMANENT) - Check before NOT_FOUND to catch "missing required"
     validation_indicators = [
-        "validation", "invalid", "bad request", "malformed",
-        "invalid input", "invalid parameter", "schema",
-        "required field", "missing required"
+        "validation",
+        "invalid",
+        "bad request",
+        "malformed",
+        "invalid input",
+        "invalid parameter",
+        "schema",
+        "required field",
+        "missing required",
     ]
-    if any(indicator in error_msg for indicator in validation_indicators) or status_code == 400:
+    if (
+        any(indicator in error_msg for indicator in validation_indicators)
+        or status_code == 400
+    ):
         logger.debug(f"Classified as PERMANENT/VALIDATION: {exception}")
         return (ErrorSeverity.PERMANENT, ErrorCategory.VALIDATION)
 
     # Not Found errors (PERMANENT)
     not_found_indicators = [
-        "not found", "does not exist", "no such",
-        "missing", "unavailable resource"
+        "not found",
+        "does not exist",
+        "no such",
+        "missing",
+        "unavailable resource",
     ]
-    if any(indicator in error_msg for indicator in not_found_indicators) or status_code == 404:
+    if (
+        any(indicator in error_msg for indicator in not_found_indicators)
+        or status_code == 404
+    ):
         logger.debug(f"Classified as PERMANENT/NOT_FOUND: {exception}")
         return (ErrorSeverity.PERMANENT, ErrorCategory.NOT_FOUND)
 
@@ -173,8 +201,11 @@ def classify_error(exception: Exception) -> Tuple[ErrorSeverity, ErrorCategory]:
         return (ErrorSeverity.TRANSIENT, ErrorCategory.SERVER_ERROR)
 
     server_error_indicators = [
-        "internal server error", "service unavailable",
-        "bad gateway", "gateway timeout", "server error"
+        "internal server error",
+        "service unavailable",
+        "bad gateway",
+        "gateway timeout",
+        "server error",
     ]
     if any(indicator in error_msg for indicator in server_error_indicators):
         logger.debug(f"Classified as TRANSIENT/SERVER_ERROR: {exception}")
@@ -182,9 +213,17 @@ def classify_error(exception: Exception) -> Tuple[ErrorSeverity, ErrorCategory]:
 
     # Network errors (TRANSIENT)
     network_indicators = [
-        "timeout", "connection", "network", "socket",
-        "dns", "host", "unreachable", "reset",
-        "connectionerror", "timeouterror", "refused"
+        "timeout",
+        "connection",
+        "network",
+        "socket",
+        "dns",
+        "host",
+        "unreachable",
+        "reset",
+        "connectionerror",
+        "timeouterror",
+        "refused",
     ]
     if any(indicator in error_msg for indicator in network_indicators):
         logger.debug(f"Classified as TRANSIENT/NETWORK: {exception}")
@@ -205,7 +244,7 @@ def calculate_backoff(
     category: ErrorCategory,
     base_delay: float = RETRY_DEFAULT_BASE_DELAY,
     max_delay: float = RETRY_MAX_DELAY,
-    jitter: bool = True
+    jitter: bool = True,
 ) -> float:
     """
     Calculate backoff delay based on error category.
@@ -235,16 +274,16 @@ def calculate_backoff(
     # Category-specific backoff strategies
     if category == ErrorCategory.RATE_LIMIT:
         # Rate limit: Start with longer delays
-        delay = min(RETRY_RATE_LIMIT_BASE_DELAY * (2 ** attempt), max_delay)
+        delay = min(RETRY_RATE_LIMIT_BASE_DELAY * (2**attempt), max_delay)
     elif category == ErrorCategory.NETWORK:
         # Network: Moderate delays
-        delay = min(RETRY_NETWORK_BASE_DELAY * (2 ** attempt), max_delay)
+        delay = min(RETRY_NETWORK_BASE_DELAY * (2**attempt), max_delay)
     elif category == ErrorCategory.SERVER_ERROR:
         # Server error: Standard exponential backoff
-        delay = min(base_delay * (2 ** attempt), max_delay)
+        delay = min(base_delay * (2**attempt), max_delay)
     else:
         # Default exponential backoff
-        delay = min(base_delay * (2 ** attempt), max_delay)
+        delay = min(base_delay * (2**attempt), max_delay)
 
     # Add jitter to prevent thundering herd
     if jitter:
@@ -260,7 +299,9 @@ def smart_retry(
     max_total_duration: Optional[float] = RETRY_MAX_TOTAL_DURATION,
     jitter: bool = True,
     retryable_exceptions: Tuple[Type[Exception], ...] = (Exception,),
-    on_retry: Optional[Callable[[Exception, int, ErrorSeverity, ErrorCategory], None]] = None
+    on_retry: Optional[
+        Callable[[Exception, int, ErrorSeverity, ErrorCategory], None]
+    ] = None,
 ) -> Callable:
     """
     Smart retry decorator that uses error classification.
@@ -288,6 +329,7 @@ def smart_retry(
         ...     # Will also fail fast if retries exceed 30 seconds total
         ...     return api.get("/data")
     """
+
     def decorator(func: Callable) -> Callable:
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
@@ -322,7 +364,11 @@ def smart_retry(
 
                     # Check retry budget BEFORE checking max attempts
                     # This ensures budget is enforced even if we haven't hit max attempts
-                    if max_total_duration and retry_start_time is not None and attempt > 0:
+                    if (
+                        max_total_duration
+                        and retry_start_time is not None
+                        and attempt > 0
+                    ):
                         elapsed = time.time() - retry_start_time
                         if elapsed >= max_total_duration:
                             logger.warning(
@@ -349,7 +395,7 @@ def smart_retry(
                         category,
                         base_delay=base_delay,
                         max_delay=max_delay,
-                        jitter=jitter
+                        jitter=jitter,
                     )
 
                     logger.info(
@@ -371,4 +417,5 @@ def smart_retry(
             ) from last_exception
 
         return wrapper
+
     return decorator

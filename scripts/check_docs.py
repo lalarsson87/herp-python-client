@@ -13,30 +13,144 @@ Checks:
 import re
 import sys
 from pathlib import Path
-from typing import List, Tuple, Set
+from typing import List, Set, Tuple
 
 # Common technical terms that spell checkers flag
 ALLOWED_TERMS = {
-    "herp", "api", "async", "await", "httpx", "sync", "candidacy", "candidacies",
-    "requisition", "timeline", "webhook", "webhooks", "hmac", "sha", "typedef",
-    "typeddict", "dataclass", "dataclasses", "enum", "enums", "mixin", "mixins",
-    "paginator", "aggregator", "uuid", "json", "jwt", "oauth", "fastapi", "flask",
-    "django", "pytest", "mypy", "pylint", "flake", "isort", "codecov",
-    "pyproject", "toml", "venv", "env", "dotenv", "gitignore", "repr",
-    "str", "int", "bool", "dict", "tuple", "cls", "init", "repr", "len",
-    "datetime", "timedelta", "timestamp", "iso", "utc", "timezone",
-    "py", "md", "yml", "yaml", "txt", "cfg", "ini",
-    "src", "docs", "tests", "dist", "build", "lib", "bin",
-    "github", "ci", "cd", "devops", "dockerfile", "kubernetes",
-    "postgres", "postgresql", "sqlite", "redis", "mongodb",
-    "aws", "gcp", "azure", "cloudrun", "lambda",
-    "ok", "dlq", "ttl", "roi", "mvp", "poc", "kpi",
-    "lars", "larsson", "dreamly", "belong", "itochu", "notion",
-    "req", "cand", "evt", "usr", "msg", "idx", "tmp", "max", "min",
-    "id", "ids", "url", "urls", "uri", "uris", "http", "https", "ftp",
-    "get", "post", "put", "patch", "delete", "head", "options",
-    "retryable", "exponential", "backoff", "idempotent", "deduplicate",
+    "herp",
+    "api",
+    "async",
+    "await",
+    "httpx",
+    "sync",
+    "candidacy",
+    "candidacies",
+    "requisition",
+    "timeline",
+    "webhook",
+    "webhooks",
+    "hmac",
+    "sha",
+    "typedef",
+    "typeddict",
+    "dataclass",
+    "dataclasses",
+    "enum",
+    "enums",
+    "mixin",
+    "mixins",
+    "paginator",
+    "aggregator",
+    "uuid",
+    "json",
+    "jwt",
+    "oauth",
+    "fastapi",
+    "flask",
+    "django",
+    "pytest",
+    "mypy",
+    "pylint",
+    "flake",
+    "isort",
+    "codecov",
+    "pyproject",
+    "toml",
+    "venv",
+    "env",
+    "dotenv",
+    "gitignore",
+    "repr",
+    "str",
+    "int",
+    "bool",
+    "dict",
+    "tuple",
+    "cls",
+    "init",
+    "repr",
+    "len",
+    "datetime",
+    "timedelta",
+    "timestamp",
+    "iso",
+    "utc",
+    "timezone",
+    "py",
+    "md",
+    "yml",
+    "yaml",
+    "txt",
+    "cfg",
+    "ini",
+    "src",
+    "docs",
+    "tests",
+    "dist",
+    "build",
+    "lib",
+    "bin",
+    "github",
+    "ci",
+    "cd",
+    "devops",
+    "dockerfile",
+    "kubernetes",
+    "postgres",
+    "postgresql",
+    "sqlite",
+    "redis",
+    "mongodb",
+    "aws",
+    "gcp",
+    "azure",
+    "cloudrun",
+    "lambda",
+    "ok",
+    "dlq",
+    "ttl",
+    "roi",
+    "mvp",
+    "poc",
+    "kpi",
+    "lars",
+    "larsson",
+    "dreamly",
+    "belong",
+    "itochu",
+    "notion",
+    "req",
+    "cand",
+    "evt",
+    "usr",
+    "msg",
+    "idx",
+    "tmp",
+    "max",
+    "min",
+    "id",
+    "ids",
+    "url",
+    "urls",
+    "uri",
+    "uris",
+    "http",
+    "https",
+    "ftp",
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "head",
+    "options",
+    "retryable",
+    "exponential",
+    "backoff",
+    "idempotent",
+    "deduplicate",
 }
+
 
 class DocumentationChecker:
     def __init__(self, docs_dir: Path):
@@ -71,7 +185,7 @@ class DocumentationChecker:
     def check_file(self, file_path: Path):
         """Check a single markdown file"""
         content = file_path.read_text()
-        lines = content.split('\n')
+        lines = content.split("\n")
 
         # Check heading hierarchy
         self.check_headings(file_path, lines)
@@ -93,8 +207,8 @@ class DocumentationChecker:
         heading_levels = []
 
         for i, line in enumerate(lines, 1):
-            if line.startswith('#'):
-                level = len(re.match(r'^#+', line).group())
+            if line.startswith("#"):
+                level = len(re.match(r"^#+", line).group())
                 heading_levels.append((i, level, line))
 
         # Check for skipped levels
@@ -114,7 +228,7 @@ class DocumentationChecker:
         code_block_start = 0
 
         for i, line in enumerate(lines, 1):
-            if line.strip().startswith('```'):
+            if line.strip().startswith("```"):
                 if in_code_block:
                     in_code_block = False
                 else:
@@ -136,53 +250,51 @@ class DocumentationChecker:
     def check_links(self, file_path: Path, content: str):
         """Check for broken internal links"""
         # Find all markdown links
-        link_pattern = r'\[([^\]]+)\]\(([^\)]+)\)'
+        link_pattern = r"\[([^\]]+)\]\(([^\)]+)\)"
         links = re.findall(link_pattern, content)
 
         for link_text, link_url in links:
             # Skip external links
-            if link_url.startswith(('http://', 'https://', 'mailto:')):
+            if link_url.startswith(("http://", "https://", "mailto:")):
                 continue
 
             # Skip anchors
-            if link_url.startswith('#'):
+            if link_url.startswith("#"):
                 continue
 
             # Check if file exists
-            if '/' in link_url:
+            if "/" in link_url:
                 linked_file = self.docs_dir.parent / link_url
             else:
                 linked_file = file_path.parent / link_url
 
             # Remove anchor from path
-            if '#' in link_url:
-                linked_file = Path(str(linked_file).split('#')[0])
+            if "#" in link_url:
+                linked_file = Path(str(linked_file).split("#")[0])
 
             if not linked_file.exists():
-                self.errors.append(
-                    f"{file_path.name} - Broken link: {link_url}"
-                )
+                self.errors.append(f"{file_path.name} - Broken link: {link_url}")
 
     def check_typos(self, file_path: Path, content: str):
         """Check for common typos"""
         common_typos = {
-            'teh': 'the',
-            'recieve': 'receive',
-            'occured': 'occurred',
-            'seperate': 'separate',
-            'defintely': 'definitely',
-            'sucessful': 'successful',
-            'sucessfully': 'successfully',
-            'necesary': 'necessary',
-            'occassion': 'occasion',
-            'reponse': 'response',
+            "teh": "the",
+            "recieve": "receive",
+            "occured": "occurred",
+            "seperate": "separate",
+            "defintely": "definitely",
+            "sucessful": "successful",
+            "sucessfully": "successfully",
+            "necesary": "necessary",
+            "occassion": "occasion",
+            "reponse": "response",
         }
 
         # Remove code blocks before checking
-        content_no_code = re.sub(r'```.*?```', '', content, flags=re.DOTALL)
+        content_no_code = re.sub(r"```.*?```", "", content, flags=re.DOTALL)
 
         for typo, correction in common_typos.items():
-            pattern = r'\b' + typo + r'\b'
+            pattern = r"\b" + typo + r"\b"
             if re.search(pattern, content_no_code, re.IGNORECASE):
                 self.errors.append(
                     f"{file_path.name} - Typo found: '{typo}' (should be '{correction}')"
@@ -194,7 +306,7 @@ class DocumentationChecker:
         max_length = 120
 
         for i, line in enumerate(lines, 1):
-            if line.strip().startswith('```'):
+            if line.strip().startswith("```"):
                 in_code_block = not in_code_block
                 continue
 
@@ -202,11 +314,11 @@ class DocumentationChecker:
                 continue
 
             # Skip lines with links
-            if '[' in line and '](' in line:
+            if "[" in line and "](" in line:
                 continue
 
             # Skip table lines
-            if '|' in line:
+            if "|" in line:
                 continue
 
             if len(line) > max_length:

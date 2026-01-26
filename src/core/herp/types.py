@@ -6,8 +6,8 @@ Uses TypedDict for better type safety and IDE support.
 Requires Python 3.8+, uses NotRequired for optional fields (Python 3.11+).
 """
 
-from typing import TypedDict, List, Optional, Literal
 from datetime import datetime
+from typing import List, Literal, Optional, TypedDict
 
 # For Python 3.11+, use NotRequired for optional fields
 # For Python 3.8-3.10, all fields are required unless explicitly Optional
@@ -22,8 +22,10 @@ except ImportError:
 # Candidacy Types
 # ============================================================================
 
+
 class CandidacyResponse(TypedDict, total=False):
     """HERP candidacy response"""
+
     id: str
     name: str
     email: NotRequired[str]
@@ -42,6 +44,7 @@ class CandidacyResponse(TypedDict, total=False):
 
 class CandidaciesListResponse(TypedDict):
     """Response for list candidacies endpoint"""
+
     data: List[CandidacyResponse]
     has_more: bool
     next_cursor: NotRequired[str]
@@ -49,6 +52,7 @@ class CandidaciesListResponse(TypedDict):
 
 class CandidacyCreateRequest(TypedDict, total=False):
     """Request for creating a candidacy"""
+
     name: str
     email: NotRequired[str]
     phone: NotRequired[str]
@@ -61,6 +65,7 @@ class CandidacyCreateRequest(TypedDict, total=False):
 
 class CandidacyStepUpdate(TypedDict, total=False):
     """Request for updating candidacy step"""
+
     step: str
     scheduled_date: NotRequired[str]
     notes: NotRequired[str]
@@ -71,18 +76,19 @@ class CandidacyStepUpdate(TypedDict, total=False):
 # ============================================================================
 
 ContactType = Literal[
-    'phone_screen',
-    'casual_interview',
-    'technical_interview',
-    'behavioral_interview',
-    'final_interview',
-    'reference_check',
-    'other'
+    "phone_screen",
+    "casual_interview",
+    "technical_interview",
+    "behavioral_interview",
+    "final_interview",
+    "reference_check",
+    "other",
 ]
 
 
 class ContactResponse(TypedDict, total=False):
     """HERP contact/interview response"""
+
     id: str
     candidacy_id: str
     type: ContactType
@@ -98,12 +104,14 @@ class ContactResponse(TypedDict, total=False):
 
 class ContactsListResponse(TypedDict):
     """Response for list contacts endpoint"""
+
     contacts: List[ContactResponse]
     has_more: NotRequired[bool]
 
 
 class ContactCreateRequest(TypedDict, total=False):
     """Request for creating a contact"""
+
     type: ContactType
     title: NotRequired[str]
     scheduled_at: NotRequired[str]
@@ -117,39 +125,44 @@ class ContactCreateRequest(TypedDict, total=False):
 # Timeline Types
 # ============================================================================
 
+
 class TimelineCommentResponse(TypedDict, total=False):
     """HERP timeline comment response"""
+
     id: str
     candidacy_id: str
     user_id: str
     user_name: NotRequired[str]
     content: str
-    content_type: Literal['text/plain', 'text/markdown']
+    content_type: Literal["text/plain", "text/markdown"]
     created_at: str
     updated_at: str
 
 
 class TimelineCommentsListResponse(TypedDict):
     """Response for list timeline comments endpoint"""
+
     data: List[TimelineCommentResponse]
     has_more: NotRequired[bool]
 
 
 class TimelineCommentCreateRequest(TypedDict, total=False):
     """Request for creating a timeline comment"""
+
     content: str
-    content_type: NotRequired[Literal['text/plain', 'text/markdown']]
+    content_type: NotRequired[Literal["text/plain", "text/markdown"]]
 
 
 # ============================================================================
 # File Types
 # ============================================================================
 
-FileType = Literal['resume', 'career_summary', 'other']
+FileType = Literal["resume", "career_summary", "other"]
 
 
 class FileResponse(TypedDict, total=False):
     """HERP file response"""
+
     id: str
     candidacy_id: str
     name: str
@@ -162,6 +175,7 @@ class FileResponse(TypedDict, total=False):
 
 class FilesListResponse(TypedDict):
     """Response for list files endpoint"""
+
     files: List[FileResponse]
     has_more: NotRequired[bool]
 
@@ -170,8 +184,10 @@ class FilesListResponse(TypedDict):
 # Evaluation Types
 # ============================================================================
 
+
 class EvaluationQuestionResponse(TypedDict, total=False):
     """Evaluation question response"""
+
     id: str
     question: str
     answer: NotRequired[str]
@@ -181,6 +197,7 @@ class EvaluationQuestionResponse(TypedDict, total=False):
 
 class EvaluationResponse(TypedDict, total=False):
     """HERP evaluation response"""
+
     id: str
     candidacy_id: str
     contact_id: NotRequired[str]
@@ -189,7 +206,9 @@ class EvaluationResponse(TypedDict, total=False):
     questions: List[EvaluationQuestionResponse]
     overall_score: NotRequired[int]
     max_overall_score: NotRequired[int]
-    recommendation: NotRequired[Literal['strong_yes', 'yes', 'maybe', 'no', 'strong_no']]
+    recommendation: NotRequired[
+        Literal["strong_yes", "yes", "maybe", "no", "strong_no"]
+    ]
     notes: NotRequired[str]
     created_at: str
     updated_at: str
@@ -197,9 +216,12 @@ class EvaluationResponse(TypedDict, total=False):
 
 class EvaluationSubmitRequest(TypedDict, total=False):
     """Request for submitting an evaluation"""
+
     questions: List[dict]  # Question responses
     overall_score: NotRequired[int]
-    recommendation: NotRequired[Literal['strong_yes', 'yes', 'maybe', 'no', 'strong_no']]
+    recommendation: NotRequired[
+        Literal["strong_yes", "yes", "maybe", "no", "strong_no"]
+    ]
     notes: NotRequired[str]
 
 
@@ -207,8 +229,10 @@ class EvaluationSubmitRequest(TypedDict, total=False):
 # Assignment Types
 # ============================================================================
 
+
 class AssignmentResponse(TypedDict, total=False):
     """HERP assignment response"""
+
     id: str
     candidacy_id: str
     user_id: str
@@ -219,11 +243,13 @@ class AssignmentResponse(TypedDict, total=False):
 
 class AssignmentsListResponse(TypedDict):
     """Response for list assignments endpoint"""
+
     assignments: List[AssignmentResponse]
 
 
 class AssignmentCreateRequest(TypedDict):
     """Request for creating an assignment"""
+
     user_id: str
     role: NotRequired[str]
 
@@ -232,8 +258,10 @@ class AssignmentCreateRequest(TypedDict):
 # Requisition Types
 # ============================================================================
 
+
 class RequisitionResponse(TypedDict, total=False):
     """HERP requisition/job response"""
+
     id: str
     title: str
     department: NotRequired[str]
@@ -248,6 +276,7 @@ class RequisitionResponse(TypedDict, total=False):
 
 class RequisitionsListResponse(TypedDict):
     """Response for list requisitions endpoint"""
+
     requisitions: List[RequisitionResponse]
     has_more: NotRequired[bool]
 
@@ -256,8 +285,10 @@ class RequisitionsListResponse(TypedDict):
 # User Types
 # ============================================================================
 
+
 class UserResponse(TypedDict, total=False):
     """HERP user response"""
+
     id: str
     name: str
     email: str
@@ -269,6 +300,7 @@ class UserResponse(TypedDict, total=False):
 
 class UsersListResponse(TypedDict):
     """Response for list users endpoint"""
+
     users: List[UserResponse]
     has_more: NotRequired[bool]
 
@@ -277,8 +309,10 @@ class UsersListResponse(TypedDict):
 # Error Response Types
 # ============================================================================
 
+
 class ErrorResponse(TypedDict, total=False):
     """HERP API error response"""
+
     error: str
     message: str
     status_code: int
@@ -289,8 +323,10 @@ class ErrorResponse(TypedDict, total=False):
 # Pagination Types
 # ============================================================================
 
+
 class PaginationParams(TypedDict, total=False):
     """Common pagination parameters"""
+
     limit: NotRequired[int]
     offset: NotRequired[int]
     cursor: NotRequired[str]
@@ -300,8 +336,10 @@ class PaginationParams(TypedDict, total=False):
 # Search Types
 # ============================================================================
 
+
 class SearchParams(TypedDict, total=False):
     """Search parameters for candidacies"""
+
     query: NotRequired[str]
     requisition_id: NotRequired[str]
     step: NotRequired[str]

@@ -39,112 +39,111 @@ Exceptions:
     - HerpAuthenticationError: Authentication errors
 """
 
-from .client import HerpClient
-from .base_client import HerpBaseClient
-from .batch_client import BatchHerpClient, BatchResult
-from .rate_limiter import HerpRateLimiter, AdaptiveRateLimiter, AsyncRateLimiter
-from .candidates import CandidaciesAPI
-from .contacts import ContactsAPI
-from .files import FilesAPI
-from .evaluations import EvaluationsAPI
+from ..errors.exceptions import (
+    HerpAPIError,
+    HerpAuthenticationError,
+    HerpRateLimitError,
+)
 from .assignments import AssignmentsAPI
-from .timeline import TimelineAPI
-from .master_data import MasterDataAPI
-
-# Async clients
-from .async_client import AsyncHerpClient
+from .async_assignments import AsyncAssignmentsAPI
 from .async_base_client import AsyncHerpBaseClient
 from .async_batch_client import AsyncBatchHerpClient, AsyncBatchResult
 from .async_candidates import AsyncCandidaciesAPI, AsyncHerpPaginator, SearchQuery
+
+# Async clients
+from .async_client import AsyncHerpClient
 from .async_contacts import AsyncContactsAPI
-from .async_files import AsyncFilesAPI
 from .async_evaluations import AsyncEvaluationsAPI
-from .async_assignments import AsyncAssignmentsAPI
-from .async_timeline import AsyncTimelineAPI
+from .async_files import AsyncFilesAPI
 from .async_master_data import AsyncMasterDataAPI
-
-# Query DSL
-from .query_dsl import (
-    Query,
-    CandidacyQuery,
-    FieldFilter,
-    FilterOperator,
-    LogicalOperator,
-    query,
-    candidacy_query,
-)
-
-# Event Sourcing
-from .events import (
-    Event,
-    CandidacyEvent,
-    CandidacyCreated,
-    CandidacyStepChanged,
-    CandidacyStatusChanged,
-    CandidacyTerminated,
-    ContactAdded,
-    ContactUpdated,
-    FileUploaded,
-    TimelineCommentAdded,
-    AssignmentAdded,
-    AssignmentRemoved,
-    EventStore,
-    InMemoryEventStore,
-    EventSourcedCandidacy,
-    CandidacyProjection,
-    TimelineProjection,
-    AuditLogProjection,
-    AnalyticsProjection,
-)
-
-# Webhooks
-from .webhooks import (
-    WebhookVerifier,
-    WebhookVerificationError,
-    verify_webhook,
-    WebhookEvent,
-    WebhookHandler,
-    AsyncWebhookHandler,
-    HandlerFunc,
-    log_event_handler,
-    print_event_handler,
-    WebhookRoute,
-    WebhookRouter,
-    AsyncWebhookRouter,
-    FailedEvent,
-)
-
+from .async_timeline import AsyncTimelineAPI
+from .base_client import HerpBaseClient
+from .batch_client import BatchHerpClient, BatchResult
+from .builders import CandidateBuilder  # Alias
+from .builders import InterviewBuilder  # Alias
 from .builders import (
     CandidacyBuilder,
     ContactBuilder,
     EvaluationResponseBuilder,
-    CandidateBuilder,  # Alias
-    InterviewBuilder,  # Alias
 )
+from .candidates import CandidaciesAPI
+from .client import HerpClient
+from .contacts import ContactsAPI
+from .evaluations import EvaluationsAPI
+
+# Event Sourcing
+from .events import (
+    AnalyticsProjection,
+    AssignmentAdded,
+    AssignmentRemoved,
+    AuditLogProjection,
+    CandidacyCreated,
+    CandidacyEvent,
+    CandidacyProjection,
+    CandidacyStatusChanged,
+    CandidacyStepChanged,
+    CandidacyTerminated,
+    ContactAdded,
+    ContactUpdated,
+    Event,
+    EventSourcedCandidacy,
+    EventStore,
+    FileUploaded,
+    InMemoryEventStore,
+    TimelineCommentAdded,
+    TimelineProjection,
+)
+from .files import FilesAPI
+from .master_data import MasterDataAPI
 from .mixins import (
     BatchFetchMixin,
+    CacheMixin,
+    MetricsMixin,
     PaginationMixin,
     ValidationMixin,
-    MetricsMixin,
-    CacheMixin,
-)
-from ..errors.exceptions import (
-    HerpAPIError,
-    HerpRateLimitError,
-    HerpAuthenticationError,
 )
 from .models import (
     Candidacy,
-    Contact,
-    Evaluation,
-    TimelineComment,
-    File,
-    Requisition,
-    User,
     CandidacyStatus,
-    TerminationReason,
+    Contact,
     ContactType,
-    FileType
+    Evaluation,
+    File,
+    FileType,
+    Requisition,
+    TerminationReason,
+    TimelineComment,
+    User,
+)
+
+# Query DSL
+from .query_dsl import (
+    CandidacyQuery,
+    FieldFilter,
+    FilterOperator,
+    LogicalOperator,
+    Query,
+    candidacy_query,
+    query,
+)
+from .rate_limiter import AdaptiveRateLimiter, AsyncRateLimiter, HerpRateLimiter
+from .timeline import TimelineAPI
+
+# Webhooks
+from .webhooks import (
+    AsyncWebhookHandler,
+    AsyncWebhookRouter,
+    FailedEvent,
+    HandlerFunc,
+    WebhookEvent,
+    WebhookHandler,
+    WebhookRoute,
+    WebhookRouter,
+    WebhookVerificationError,
+    WebhookVerifier,
+    log_event_handler,
+    print_event_handler,
+    verify_webhook,
 )
 
 __all__ = [
@@ -153,13 +152,11 @@ __all__ = [
     "HerpBaseClient",
     "BatchHerpClient",
     "BatchResult",
-
     # Main Clients (Async)
     "AsyncHerpClient",
     "AsyncHerpBaseClient",
     "AsyncBatchHerpClient",
     "AsyncBatchResult",
-
     # Specialized API Clients (Sync)
     "CandidaciesAPI",
     "ContactsAPI",
@@ -168,7 +165,6 @@ __all__ = [
     "AssignmentsAPI",
     "TimelineAPI",
     "MasterDataAPI",
-
     # Specialized API Clients (Async)
     "AsyncCandidaciesAPI",
     "AsyncContactsAPI",
@@ -177,11 +173,9 @@ __all__ = [
     "AsyncAssignmentsAPI",
     "AsyncTimelineAPI",
     "AsyncMasterDataAPI",
-
     # Helpers
     "AsyncHerpPaginator",
     "SearchQuery",
-
     # Query DSL
     "Query",
     "CandidacyQuery",
@@ -190,7 +184,6 @@ __all__ = [
     "LogicalOperator",
     "query",
     "candidacy_query",
-
     # Event Sourcing
     "Event",
     "CandidacyEvent",
@@ -211,7 +204,6 @@ __all__ = [
     "TimelineProjection",
     "AuditLogProjection",
     "AnalyticsProjection",
-
     # Webhooks
     "WebhookVerifier",
     "WebhookVerificationError",
@@ -226,31 +218,26 @@ __all__ = [
     "WebhookRouter",
     "AsyncWebhookRouter",
     "FailedEvent",
-
     # Builders
     "CandidacyBuilder",
     "ContactBuilder",
     "EvaluationResponseBuilder",
     "CandidateBuilder",  # Alias
     "InterviewBuilder",  # Alias
-
     # Mixins
     "BatchFetchMixin",
     "PaginationMixin",
     "ValidationMixin",
     "MetricsMixin",
     "CacheMixin",
-
     # Exceptions
     "HerpAPIError",
     "HerpRateLimitError",
     "HerpAuthenticationError",
-
     # Rate Limiters
     "HerpRateLimiter",
     "AdaptiveRateLimiter",
     "AsyncRateLimiter",
-
     # Models
     "Candidacy",
     "Contact",
@@ -259,7 +246,6 @@ __all__ = [
     "File",
     "Requisition",
     "User",
-
     # Enums
     "CandidacyStatus",
     "TerminationReason",

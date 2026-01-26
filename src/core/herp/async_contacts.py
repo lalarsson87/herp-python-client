@@ -6,15 +6,12 @@ Async version of interview/contact operations.
 """
 
 import asyncio
-from typing import Dict, Any, List
-from concurrent.futures import ThreadPoolExecutor
+from typing import Any, Dict, List
 
-from ..utils.validators import validate_list_response, validate_single_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response, validate_single_response
 from .async_base_client import AsyncHerpBaseClient
-from .schemas import HerpContactsListResponse, HerpContactResponse
-from .mixins import BatchFetchMixin
-
+from .schemas import HerpContactResponse, HerpContactsListResponse
 
 logger = get_logger(__name__)
 
@@ -55,9 +52,7 @@ class AsyncContactsAPI:
         return data.get("contacts", data.get("data", []))
 
     async def list_for_multiple(
-        self,
-        candidacy_ids: List[str],
-        max_concurrency: int = 10
+        self, candidacy_ids: List[str], max_concurrency: int = 10
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Batch fetch contacts for multiple candidacies (async)
@@ -104,10 +99,9 @@ class AsyncContactsAPI:
             results[candidacy_id] = contacts
             if error:
                 errors[candidacy_id] = error
-                if hasattr(self.client, 'metrics'):
+                if hasattr(self.client, "metrics"):
                     self.client.metrics.increment_counter(
-                        "herp.batch.contacts.errors",
-                        labels={"error": "fetch_failed"}
+                        "herp.batch.contacts.errors", labels={"error": "fetch_failed"}
                     )
 
         # Log summary
@@ -117,19 +111,16 @@ class AsyncContactsAPI:
         )
 
         # Record metrics
-        if hasattr(self.client, 'metrics'):
+        if hasattr(self.client, "metrics"):
             self.client.metrics.increment_counter(
-                "herp.batch.contacts.operations",
-                labels={"status": "success"}
+                "herp.batch.contacts.operations", labels={"status": "success"}
             )
 
         return results
 
     @validate_single_response(HerpContactResponse, strict=False)
     async def create(
-        self,
-        candidacy_id: str,
-        contact_data: Dict[str, Any]
+        self, candidacy_id: str, contact_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Create new contact/interview
@@ -149,17 +140,13 @@ class AsyncContactsAPI:
             })
         """
         data = await self.client.post(
-            f"/v1/candidacies/{candidacy_id}/contacts",
-            json=contact_data
+            f"/v1/candidacies/{candidacy_id}/contacts", json=contact_data
         )
         return data.get("contact", data.get("data", data))
 
     @validate_single_response(HerpContactResponse, strict=False)
     async def update(
-        self,
-        candidacy_id: str,
-        contact_id: str,
-        contact_data: Dict[str, Any]
+        self, candidacy_id: str, contact_id: str, contact_data: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Update contact/interview
@@ -173,8 +160,7 @@ class AsyncContactsAPI:
             Updated contact record
         """
         data = await self.client.patch(
-            f"/v1/candidacies/{candidacy_id}/contacts/{contact_id}",
-            json=contact_data
+            f"/v1/candidacies/{candidacy_id}/contacts/{contact_id}", json=contact_data
         )
         return data.get("contact", data.get("data", data))
 

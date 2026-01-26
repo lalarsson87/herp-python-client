@@ -10,26 +10,26 @@ Components:
     - Projections: Event-to-state projections
 """
 
+from .aggregate import EventSourcedCandidacy
+from .event_store import EventStore, InMemoryEventStore
 from .events import (
-    Event,
-    CandidacyEvent,
+    AssignmentAdded,
+    AssignmentRemoved,
     CandidacyCreated,
-    CandidacyStepChanged,
+    CandidacyEvent,
     CandidacyStatusChanged,
+    CandidacyStepChanged,
     CandidacyTerminated,
     ContactAdded,
     ContactUpdated,
+    Event,
     FileUploaded,
     TimelineCommentAdded,
-    AssignmentAdded,
-    AssignmentRemoved,
 )
-from .event_store import EventStore, InMemoryEventStore
-from .aggregate import EventSourcedCandidacy
 from .projections import (
+    AuditLogProjection,
     CandidacyProjection,
     TimelineProjection,
-    AuditLogProjection,
 )
 
 __all__ = [
@@ -46,14 +46,11 @@ __all__ = [
     "TimelineCommentAdded",
     "AssignmentAdded",
     "AssignmentRemoved",
-
     # Event Store
     "EventStore",
     "InMemoryEventStore",
-
     # Aggregate
     "EventSourcedCandidacy",
-
     # Projections
     "CandidacyProjection",
     "TimelineProjection",

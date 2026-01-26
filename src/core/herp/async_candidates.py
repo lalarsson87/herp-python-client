@@ -5,16 +5,16 @@ HERP Async Candidacies API Client
 Async version of candidacy operations including list, search, create, update, and terminate.
 """
 
-from typing import Dict, Any, List, Optional, AsyncIterator
+from typing import Any, AsyncIterator, Dict, List, Optional
 
-from ..utils.validators import validate_list_response, validate_single_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response, validate_single_response
 from .async_base_client import AsyncHerpBaseClient
+from .query_dsl import FieldFilter, FilterOperator, LogicalOperator, Query
 from .schemas import (
     HerpCandidaciesListResponse,
     HerpCandidacyResponse,
 )
-
 
 logger = get_logger(__name__)
 
@@ -27,7 +27,7 @@ class AsyncHerpPaginator:
         fetch_function,
         limit: int = 100,
         max_pages: Optional[int] = None,
-        **fetch_kwargs
+        **fetch_kwargs,
     ):
         """
         Initialize async paginator
@@ -55,9 +55,7 @@ class AsyncHerpPaginator:
 
             # Fetch page
             items = await self.fetch_function(
-                page=page,
-                limit=self.limit,
-                **self.fetch_kwargs
+                page=page, limit=self.limit, **self.fetch_kwargs
             )
 
             # Yield items
@@ -72,9 +70,8 @@ class AsyncHerpPaginator:
             pages_fetched += 1
 
 
-# Note: SearchQuery moved to query_dsl.py as CandidacyQuery
+# Note: Query moved to query_dsl.py as CandidacyQuery
 # Import for backward compatibility
-from .query_dsl import CandidacyQuery as SearchQuery
 
 
 class AsyncCandidaciesAPI:
@@ -104,10 +101,7 @@ class AsyncCandidaciesAPI:
 
     @validate_list_response(HerpCandidaciesListResponse, strict=False)
     async def list(
-        self,
-        updated_since: Optional[str] = None,
-        page: int = 1,
-        limit: int = 50
+        self, updated_since: Optional[str] = None, page: int = 1, limit: int = 50
     ) -> List[Dict[str, Any]]:
         """
         List candidacies (single page)
@@ -132,7 +126,7 @@ class AsyncCandidaciesAPI:
         self,
         updated_since: Optional[str] = None,
         limit: int = 100,
-        max_pages: Optional[int] = None
+        max_pages: Optional[int] = None,
     ) -> AsyncHerpPaginator:
         """
         Iterate over all candidacies (memory efficient)
@@ -153,13 +147,11 @@ class AsyncCandidaciesAPI:
             fetch_function=self.list,
             limit=limit,
             max_pages=max_pages,
-            updated_since=updated_since
+            updated_since=updated_since,
         )
 
     async def fetch_all(
-        self,
-        updated_since: Optional[str] = None,
-        limit: int = 100
+        self, updated_since: Optional[str] = None, limit: int = 100
     ) -> List[Dict[str, Any]]:
         """
         Fetch all candidacies (loads everything into memory)
@@ -181,9 +173,9 @@ class AsyncCandidaciesAPI:
 
     async def search(
         self,
-        query: Optional[SearchQuery] = None,
+        query: Optional[Query] = None,
         limit: Optional[int] = None,
-        **filters
+        **filters,
     ) -> List[Dict[str, Any]]:
         """
         Search candidacies with flexible filtering using Query DSL
@@ -221,7 +213,6 @@ class AsyncCandidaciesAPI:
             # Legacy direct filters still work
             results = await api.search(email="jane@example.com", step="interview")
         """
-        from .query_dsl import Query
 
         # If query is provided, use it
         if query is not None:
@@ -240,7 +231,9 @@ class AsyncCandidaciesAPI:
         logger.info(f"Search found {len(results)} candidacies matching query")
         return results
 
-    def _apply_query(self, query: Query, candidacies: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    def _apply_query(
+        self, query: Query, candidacies: List[Dict[str, Any]]
+    ) -> List[Dict[str, Any]]:
         """Apply query DSL to candidacies"""
         results = []
         for candidacy in candidacies:
@@ -250,7 +243,6 @@ class AsyncCandidaciesAPI:
 
     def _matches_query(self, query: Query, candidacy: Dict[str, Any]) -> bool:
         """Check if candidacy matches query"""
-        from .query_dsl import FieldFilter, FilterOperator, LogicalOperator
 
         # Handle empty query
         if not query.filters:
@@ -278,9 +270,8 @@ class AsyncCandidaciesAPI:
 
         return result
 
-    def _matches_filter(self, filter: "FieldFilter", candidacy: Dict[str, Any]) -> bool:
+    def _matches_filter(self, filter: FieldFilter, candidacy: Dict[str, Any]) -> bool:
         """Check if candidacy matches single filter"""
-        from .query_dsl import FilterOperator
 
         field_value = candidacy.get(filter.field)
         operator = filter.operator
@@ -311,7 +302,11 @@ class AsyncCandidaciesAPI:
         elif operator == FilterOperator.LESS_THAN_OR_EQUAL:
             return field_value <= filter_value if field_value else False
         elif operator == FilterOperator.BETWEEN:
-            if field_value and isinstance(filter_value, list) and len(filter_value) == 2:
+            if (
+                field_value
+                and isinstance(filter_value, list)
+                and len(filter_value) == 2
+            ):
                 return filter_value[0] <= field_value <= filter_value[1]
             return False
         elif operator == FilterOperator.IS_NULL:
@@ -321,7 +316,9 @@ class AsyncCandidaciesAPI:
         else:
             return True
 
-    def _apply_legacy_filters(self, candidacies: List[Dict[str, Any]], filters: Dict[str, Any]) -> List[Dict[str, Any]]:
+    def _apply_legacy_filters(
+        self, candidacies: List[Dict[str, Any]], filters: Dict[str, Any]
+    ) -> List[Dict[str, Any]]:
         """Apply legacy quick filters"""
         results = []
         for candidacy in candidacies:
@@ -383,10 +380,7 @@ class AsyncCandidaciesAPI:
 
     @validate_single_response(HerpCandidacyResponse, strict=False)
     async def update_step(
-        self,
-        candidacy_id: str,
-        step: str,
-        comment: Optional[str] = None
+        self, candidacy_id: str, step: str, comment: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Update candidacy hiring step
@@ -404,17 +398,13 @@ class AsyncCandidaciesAPI:
             payload["comment"] = comment
 
         data = await self.client.patch(
-            f"/v1/candidacies/{candidacy_id}/step",
-            json=payload
+            f"/v1/candidacies/{candidacy_id}/step", json=payload
         )
         return data.get("candidacy", data.get("data", data))
 
     @validate_single_response(HerpCandidacyResponse, strict=False)
     async def terminate(
-        self,
-        candidacy_id: str,
-        reason: str,
-        comment: Optional[str] = None
+        self, candidacy_id: str, reason: str, comment: Optional[str] = None
     ) -> Dict[str, Any]:
         """
         Terminate candidacy
@@ -432,7 +422,6 @@ class AsyncCandidaciesAPI:
             payload["comment"] = comment
 
         data = await self.client.patch(
-            f"/v1/candidacies/{candidacy_id}/termination",
-            json=payload
+            f"/v1/candidacies/{candidacy_id}/termination", json=payload
         )
         return data.get("candidacy", data.get("data", data))

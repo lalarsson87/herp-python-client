@@ -5,13 +5,12 @@ HERP Async Evaluations API Client
 Async version of evaluation operations.
 """
 
-from typing import Dict, Any
+from typing import Any, Dict
 
-from ..utils.validators import validate_single_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_single_response
 from .async_base_client import AsyncHerpBaseClient
 from .schemas import HerpEvaluationResponse
-
 
 logger = get_logger(__name__)
 
@@ -48,9 +47,7 @@ class AsyncEvaluationsAPI:
 
     @validate_single_response(HerpEvaluationResponse, strict=False)
     async def submit(
-        self,
-        evaluation_id: str,
-        responses: Dict[str, Any]
+        self, evaluation_id: str, responses: Dict[str, Any]
     ) -> Dict[str, Any]:
         """
         Submit evaluation responses
@@ -71,8 +68,5 @@ class AsyncEvaluationsAPI:
                 "recommendation": "strong_yes"
             })
         """
-        data = await self.client.put(
-            f"/v1/evaluations/{evaluation_id}",
-            json=responses
-        )
+        data = await self.client.put(f"/v1/evaluations/{evaluation_id}", json=responses)
         return data.get("evaluation", data.get("data", data))

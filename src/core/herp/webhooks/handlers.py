@@ -15,10 +15,10 @@ HERP webhooks notify about candidacy changes:
 """
 
 import json
-from typing import Dict, Any, Callable, Optional, List
 from datetime import datetime
-from ...utils.logging import get_logger
+from typing import Any, Callable, Dict, List, Optional
 
+from ...utils.logging import get_logger
 
 logger = get_logger(__name__)
 
@@ -107,6 +107,7 @@ class WebhookHandler:
         Returns:
             Decorator function
         """
+
         def decorator(func: HandlerFunc) -> HandlerFunc:
             self.register(event_type, func)
             return func
@@ -146,7 +147,9 @@ class WebhookHandler:
         """
         event = WebhookEvent(payload)
 
-        logger.info(f"Processing webhook event: {event.event_type} (id={event.event_id})")
+        logger.info(
+            f"Processing webhook event: {event.event_type} (id={event.event_id})"
+        )
 
         # Get handlers for event type
         handlers = self.handlers.get(event.event_type, [])
@@ -158,8 +161,7 @@ class WebhookHandler:
                     handler(event)
                 except Exception as e:
                     logger.error(
-                        f"Error in handler for {event.event_type}: {e}",
-                        exc_info=True
+                        f"Error in handler for {event.event_type}: {e}", exc_info=True
                     )
         elif self.default_handler:
             # Use default handler
@@ -168,7 +170,7 @@ class WebhookHandler:
             except Exception as e:
                 logger.error(
                     f"Error in default handler for {event.event_type}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
         else:
             logger.warning(f"No handler registered for {event.event_type}")
@@ -218,6 +220,7 @@ class AsyncWebhookHandler:
         Returns:
             Decorator function
         """
+
         def decorator(func: Callable) -> Callable:
             self.register(event_type, func)
             return func
@@ -257,7 +260,9 @@ class AsyncWebhookHandler:
         """
         event = WebhookEvent(payload)
 
-        logger.info(f"Processing webhook event: {event.event_type} (id={event.event_id})")
+        logger.info(
+            f"Processing webhook event: {event.event_type} (id={event.event_id})"
+        )
 
         # Get handlers for event type
         handlers = self.handlers.get(event.event_type, [])
@@ -270,7 +275,7 @@ class AsyncWebhookHandler:
                 except Exception as e:
                     logger.error(
                         f"Error in async handler for {event.event_type}: {e}",
-                        exc_info=True
+                        exc_info=True,
                     )
         elif self.default_handler:
             # Use default handler
@@ -279,7 +284,7 @@ class AsyncWebhookHandler:
             except Exception as e:
                 logger.error(
                     f"Error in default async handler for {event.event_type}: {e}",
-                    exc_info=True
+                    exc_info=True,
                 )
         else:
             logger.warning(f"No handler registered for {event.event_type}")
@@ -299,6 +304,7 @@ class AsyncWebhookHandler:
 
 
 # Common event handlers
+
 
 def log_event_handler(event: WebhookEvent) -> None:
     """

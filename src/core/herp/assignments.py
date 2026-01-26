@@ -5,7 +5,7 @@ HERP Assignments API Client
 Handles team member assignment operations for candidates.
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
 from ..utils.logging import get_logger
 from .base_client import HerpBaseClient

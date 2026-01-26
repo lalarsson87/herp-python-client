@@ -5,16 +5,15 @@ HERP Async Master Data API Client
 Async version of master data operations with caching.
 """
 
-from typing import Dict, Any, List, Optional
+from typing import Optional
 
-from ..utils.validators import validate_list_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response
 from .async_base_client import AsyncHerpBaseClient
 from .schemas import (
     HerpRequisitionsListResponse,
     HerpUsersListResponse,
 )
-
 
 logger = get_logger(__name__)
 
@@ -37,10 +36,7 @@ class AsyncMasterDataAPI:
         self.client = client
 
     async def _cached_fetch(
-        self,
-        cache_key: str,
-        fetch_function,
-        ttl: int = 300
+        self, cache_key: str, fetch_function, ttl: int = 300
     ) -> Any:
         """
         Fetch with caching (async version)
@@ -54,7 +50,10 @@ class AsyncMasterDataAPI:
             Cached or freshly fetched data
         """
         # Check if cache manager available
-        if not hasattr(self.client, 'cache_manager') or self.client.cache_manager is None:
+        if (
+            not hasattr(self.client, "cache_manager")
+            or self.client.cache_manager is None
+        ):
             return await fetch_function()
 
         cache_manager = self.client.cache_manager
@@ -78,14 +77,12 @@ class AsyncMasterDataAPI:
         Args:
             cache_key: Cache key to invalidate
         """
-        if hasattr(self.client, 'cache_manager') and self.client.cache_manager:
+        if hasattr(self.client, "cache_manager") and self.client.cache_manager:
             self.client.cache_manager.delete(cache_key)
 
     @validate_list_response(HerpRequisitionsListResponse, strict=False)
     async def list_requisitions(
-        self,
-        use_cache: bool = True,
-        ttl: int = 300
+        self, use_cache: bool = True, ttl: int = 300
     ) -> List[Dict[str, Any]]:
         """
         List job requisitions (cached for 5 minutes by default)
@@ -109,16 +106,12 @@ class AsyncMasterDataAPI:
             return await self.list_requisitions(use_cache=False)
 
         return await self._cached_fetch(
-            cache_key="herp:master_data:requisitions",
-            fetch_function=fetch,
-            ttl=ttl
+            cache_key="herp:master_data:requisitions", fetch_function=fetch, ttl=ttl
         )
 
     @validate_list_response(HerpUsersListResponse, strict=False)
     async def list_users(
-        self,
-        use_cache: bool = True,
-        ttl: int = 600
+        self, use_cache: bool = True, ttl: int = 600
     ) -> List[Dict[str, Any]]:
         """
         List team members (cached for 10 minutes by default)
@@ -142,7 +135,5 @@ class AsyncMasterDataAPI:
             return await self.list_users(use_cache=False)
 
         return await self._cached_fetch(
-            cache_key="herp:master_data:users",
-            fetch_function=fetch,
-            ttl=ttl
+            cache_key="herp:master_data:users", fetch_function=fetch, ttl=ttl
         )

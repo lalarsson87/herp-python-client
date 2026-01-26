@@ -5,14 +5,13 @@ HERP Contacts API Client
 Handles interview and contact-related operations for candidates.
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from ..utils.validators import validate_list_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response
 from .base_client import HerpBaseClient
-from .schemas import HerpContactsListResponse
 from .mixins import BatchFetchMixin
-
+from .schemas import HerpContactsListResponse
 
 logger = get_logger(__name__)
 
@@ -48,9 +47,7 @@ class ContactsAPI(BatchFetchMixin):
         return data.get("contacts", data.get("data", []))
 
     def list_for_multiple(
-        self,
-        candidacy_ids: List[str],
-        max_workers: int = 5
+        self, candidacy_ids: List[str], max_workers: int = 5
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Fetch contacts for multiple candidacies efficiently (solves N+1 problem)
@@ -74,14 +71,10 @@ class ContactsAPI(BatchFetchMixin):
             ids=candidacy_ids,
             fetch_function=self.list,
             max_workers=max_workers,
-            resource_name="contacts"
+            resource_name="contacts",
         )
 
-    def create(
-        self,
-        candidacy_id: str,
-        contact_data: Dict[str, Any]
-    ) -> Dict[str, Any]:
+    def create(self, candidacy_id: str, contact_data: Dict[str, Any]) -> Dict[str, Any]:
         """
         Create a new contact/interview
 
@@ -93,6 +86,5 @@ class ContactsAPI(BatchFetchMixin):
             Created contact record
         """
         return self.client.post(
-            f"/v1/candidacies/{candidacy_id}/contacts",
-            json=contact_data
+            f"/v1/candidacies/{candidacy_id}/contacts", json=contact_data
         )

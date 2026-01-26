@@ -11,14 +11,13 @@ Projections transform events into read models optimized for specific queries:
 - AnalyticsProjection: Analytics and reporting view
 """
 
-from typing import Dict, Any, List, Optional
-from datetime import datetime
 from collections import defaultdict
+from datetime import datetime
+from typing import Any, Dict, List, Optional
 
-from .events import Event, CandidacyEvent
-from .event_store import EventStore
 from ...utils.logging import get_logger
-
+from .event_store import EventStore
+from .events import CandidacyEvent, Event
 
 logger = get_logger(__name__)
 
@@ -118,10 +117,7 @@ class CandidacyProjection(Projection):
             List of candidacy states
         """
         all_states = self.get_all_candidacy_states()
-        return [
-            state for state in all_states.values()
-            if state.get("status") == status
-        ]
+        return [state for state in all_states.values() if state.get("status") == status]
 
     def get_candidacies_by_step(self, step: str) -> List[Dict[str, Any]]:
         """
@@ -134,10 +130,7 @@ class CandidacyProjection(Projection):
             List of candidacy states
         """
         all_states = self.get_all_candidacy_states()
-        return [
-            state for state in all_states.values()
-            if state.get("step") == step
-        ]
+        return [state for state in all_states.values() if state.get("step") == step]
 
 
 class TimelineProjection(Projection):
@@ -157,7 +150,7 @@ class TimelineProjection(Projection):
         self,
         candidacy_id: str,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get timeline for candidacy
@@ -193,9 +186,7 @@ class TimelineProjection(Projection):
         return sorted(timeline, key=lambda x: x["timestamp"], reverse=True)
 
     def get_recent_activity(
-        self,
-        hours: int = 24,
-        limit: Optional[int] = None
+        self, hours: int = 24, limit: Optional[int] = None
     ) -> List[Dict[str, Any]]:
         """
         Get recent activity across all candidacies
@@ -247,7 +238,7 @@ class TimelineProjection(Projection):
             "ContactAdded": f"Contact added: {event.data.get('type')}",
             "ContactUpdated": f"Contact updated: {event.data.get('contact_id')}",
             "FileUploaded": f"File uploaded: {event.data.get('file_name')}",
-            "TimelineCommentAdded": f"Comment added",
+            "TimelineCommentAdded": "Comment added",
             "AssignmentAdded": f"User {event.data.get('user_id')} assigned as {event.data.get('role')}",
             "AssignmentRemoved": f"User {event.data.get('user_id')} unassigned",
         }
@@ -272,7 +263,7 @@ class AuditLogProjection(Projection):
         self,
         candidacy_id: str,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get audit log for candidacy
@@ -315,7 +306,7 @@ class AuditLogProjection(Projection):
         self,
         user_id: str,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> List[Dict[str, Any]]:
         """
         Get all actions by a user
@@ -329,15 +320,11 @@ class AuditLogProjection(Projection):
             List of user actions
         """
         all_events = self.event_store.load_all_events(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp
+            from_timestamp=from_timestamp, to_timestamp=to_timestamp
         )
 
         # Filter by user
-        user_events = [
-            e for e in all_events
-            if e.metadata.get("user_id") == user_id
-        ]
+        user_events = [e for e in all_events if e.metadata.get("user_id") == user_id]
 
         # Convert to action entries
         actions = []
@@ -403,7 +390,7 @@ class AnalyticsProjection(Projection):
     def get_metrics(
         self,
         from_timestamp: Optional[datetime] = None,
-        to_timestamp: Optional[datetime] = None
+        to_timestamp: Optional[datetime] = None,
     ) -> Dict[str, Any]:
         """
         Get recruitment metrics
@@ -418,8 +405,7 @@ class AnalyticsProjection(Projection):
         from .aggregate import EventSourcedCandidacy
 
         all_events = self.event_store.load_all_events(
-            from_timestamp=from_timestamp,
-            to_timestamp=to_timestamp
+            from_timestamp=from_timestamp, to_timestamp=to_timestamp
         )
 
         # Group events by candidacy

@@ -6,51 +6,43 @@ Categorizes errors as transient (retryable) or permanent (fail-fast).
 """
 
 from .classification import (
-    ErrorSeverity,
     ErrorCategory,
-    classify_error,
+    ErrorSeverity,
     calculate_backoff,
+    classify_error,
     smart_retry,
 )
-from .exceptions import (
-    # Base exceptions
-    HerpNotionError,
-    TransientError,
-    PermanentError,
-    # HERP exceptions
-    HerpAPIError,
-    HerpRateLimitError,
-    HerpAuthenticationError,
-    HerpValidationError,
-    HerpNotFoundError,
-    HerpServerError,
-    HerpNetworkError,
-    # Notion exceptions
-    NotionAPIError,
-    NotionRateLimitError,
-    NotionAuthenticationError,
-    NotionValidationError,
-    NotionNotFoundError,
-    NotionServerError,
-    NotionNetworkError,
-    # Sync exceptions
-    SyncError,
-    SyncValidationError,
-    SyncDataError,
-    SyncTimeoutError,
-    # Cache exceptions
+from .exceptions import (  # Base exceptions; HERP exceptions; Notion exceptions; Sync exceptions; Cache exceptions; Circuit breaker; Retry; Helpers
     CacheError,
     CacheFullError,
     CacheSerializationError,
-    # Circuit breaker
     CircuitBreakerError,
-    # Retry
-    RetryError,
+    HerpAPIError,
+    HerpAuthenticationError,
+    HerpNetworkError,
+    HerpNotFoundError,
+    HerpNotionError,
+    HerpRateLimitError,
+    HerpServerError,
+    HerpValidationError,
+    NotionAPIError,
+    NotionAuthenticationError,
+    NotionNetworkError,
+    NotionNotFoundError,
+    NotionRateLimitError,
+    NotionServerError,
+    NotionValidationError,
+    PermanentError,
     RetryBudgetExceededError,
-    # Helpers
+    RetryError,
+    SyncDataError,
+    SyncError,
+    SyncTimeoutError,
+    SyncValidationError,
+    TransientError,
     exception_from_http_status,
-    is_transient_error,
     is_permanent_error,
+    is_transient_error,
 )
 
 __all__ = [

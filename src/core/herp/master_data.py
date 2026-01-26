@@ -6,17 +6,16 @@ Handles master data operations including requisitions (job postings)
 and users (team members).
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from ..utils.validators import validate_list_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response
 from .base_client import HerpBaseClient
+from .mixins import CacheMixin
 from .schemas import (
     HerpRequisitionsListResponse,
     HerpUsersListResponse,
 )
-from .mixins import CacheMixin
-
 
 logger = get_logger(__name__)
 
@@ -38,7 +37,9 @@ class MasterDataAPI(CacheMixin):
         self.client = client
 
     @validate_list_response(HerpRequisitionsListResponse, strict=False)
-    def list_requisitions(self, use_cache: bool = True, ttl: int = 300) -> List[Dict[str, Any]]:
+    def list_requisitions(
+        self, use_cache: bool = True, ttl: int = 300
+    ) -> List[Dict[str, Any]]:
         """
         List job requisitions (open positions)
 
@@ -60,11 +61,13 @@ class MasterDataAPI(CacheMixin):
         return self._cached_fetch(
             cache_key="herp:master_data:requisitions",
             fetch_function=lambda: self.list_requisitions(use_cache=False),
-            ttl=ttl
+            ttl=ttl,
         )
 
     @validate_list_response(HerpUsersListResponse, strict=False)
-    def list_users(self, use_cache: bool = True, ttl: int = 600) -> List[Dict[str, Any]]:
+    def list_users(
+        self, use_cache: bool = True, ttl: int = 600
+    ) -> List[Dict[str, Any]]:
         """
         List team members and recruiters
 
@@ -86,5 +89,5 @@ class MasterDataAPI(CacheMixin):
         return self._cached_fetch(
             cache_key="herp:master_data:users",
             fetch_function=lambda: self.list_users(use_cache=False),
-            ttl=ttl
+            ttl=ttl,
         )

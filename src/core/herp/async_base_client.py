@@ -6,31 +6,29 @@ Provides async HTTP client with authentication, rate limiting, retry logic,
 circuit breaker, and observability.
 """
 
-import asyncio
-from typing import Dict, Any, Optional, List
 from datetime import datetime
 
 try:
     import httpx
+
     HTTPX_AVAILABLE = True
 except ImportError:
     HTTPX_AVAILABLE = False
 
-from ..utils.config import HerpConfig
-from ..utils.logging import get_logger
-from ..utils.decorators import async_smart_retry
-from ..errors.exceptions import (
-    HerpAPIError,
-    HerpRateLimitError,
-    HerpAuthenticationError,
-    HerpServerError,
-    HerpNotFoundError,
-)
-from .rate_limiter import AsyncRateLimiter
 from ..cache.manager import CacheManager
 from ..circuit_breaker import AsyncCircuitBreaker, CircuitBreakerConfig
+from ..errors.exceptions import (
+    HerpAPIError,
+    HerpAuthenticationError,
+    HerpNotFoundError,
+    HerpRateLimitError,
+    HerpServerError,
+)
 from ..metrics.collector import MetricsCollector, get_metrics_collector
-
+from ..utils.config import HerpConfig
+from ..utils.decorators import async_smart_retry
+from ..utils.logging import get_logger
+from .rate_limiter import AsyncRateLimiter
 
 logger = get_logger(__name__)
 
@@ -134,10 +132,7 @@ class AsyncHerpBaseClient:
         return headers
 
     async def _make_request(
-        self,
-        method: str,
-        endpoint: str,
-        **kwargs
+        self, method: str, endpoint: str, **kwargs
     ) -> httpx.Response:
         """
         Make an async HTTP request with rate limiting and metrics
@@ -187,7 +182,7 @@ class AsyncHerpBaseClient:
                     "method": method,
                     "endpoint": endpoint.split("?")[0],
                     "status": str(response.status_code),
-                }
+                },
             )
 
             # Check response status
@@ -199,7 +194,7 @@ class AsyncHerpBaseClient:
                 )
                 self.metrics.increment_counter(
                     "herp.api.errors",
-                    labels={"type": "rate_limit", "endpoint": endpoint}
+                    labels={"type": "rate_limit", "endpoint": endpoint},
                 )
                 raise error
 
@@ -207,7 +202,7 @@ class AsyncHerpBaseClient:
                 error = HerpAuthenticationError("Invalid API token")
                 self.metrics.increment_counter(
                     "herp.api.errors",
-                    labels={"type": "authentication", "endpoint": endpoint}
+                    labels={"type": "authentication", "endpoint": endpoint},
                 )
                 raise error
 
@@ -215,7 +210,7 @@ class AsyncHerpBaseClient:
                 error = HerpNotFoundError(f"Resource not found: {endpoint}")
                 self.metrics.increment_counter(
                     "herp.api.errors",
-                    labels={"type": "not_found", "endpoint": endpoint}
+                    labels={"type": "not_found", "endpoint": endpoint},
                 )
                 raise error
 
@@ -225,7 +220,7 @@ class AsyncHerpBaseClient:
                 )
                 self.metrics.increment_counter(
                     "herp.api.errors",
-                    labels={"type": "server_error", "endpoint": endpoint}
+                    labels={"type": "server_error", "endpoint": endpoint},
                 )
                 raise error
 
@@ -235,7 +230,7 @@ class AsyncHerpBaseClient:
                 )
                 self.metrics.increment_counter(
                     "herp.api.errors",
-                    labels={"type": "client_error", "endpoint": endpoint}
+                    labels={"type": "client_error", "endpoint": endpoint},
                 )
                 raise error
 
@@ -251,15 +246,16 @@ class AsyncHerpBaseClient:
                     "method": method,
                     "endpoint": endpoint.split("?")[0],
                     "status": "error",
-                }
+                },
             )
             self.metrics.increment_counter(
-                "herp.api.errors",
-                labels={"type": "network", "endpoint": endpoint}
+                "herp.api.errors", labels={"type": "network", "endpoint": endpoint}
             )
             raise HerpAPIError(f"Network error: {str(e)}") from e
 
-    @async_smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+    @async_smart_retry(
+        max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+    )
     async def get(self, endpoint: str, **kwargs) -> Dict[str, Any]:
         """
         Async GET request
@@ -274,7 +270,9 @@ class AsyncHerpBaseClient:
         response = await self._make_request("GET", endpoint, **kwargs)
         return response.json()
 
-    @async_smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+    @async_smart_retry(
+        max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+    )
     async def post(self, endpoint: str, **kwargs) -> Dict[str, Any]:
         """
         Async POST request
@@ -289,7 +287,9 @@ class AsyncHerpBaseClient:
         response = await self._make_request("POST", endpoint, **kwargs)
         return response.json()
 
-    @async_smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+    @async_smart_retry(
+        max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+    )
     async def patch(self, endpoint: str, **kwargs) -> Dict[str, Any]:
         """
         Async PATCH request
@@ -304,7 +304,9 @@ class AsyncHerpBaseClient:
         response = await self._make_request("PATCH", endpoint, **kwargs)
         return response.json()
 
-    @async_smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+    @async_smart_retry(
+        max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+    )
     async def put(self, endpoint: str, **kwargs) -> Dict[str, Any]:
         """
         Async PUT request
@@ -319,7 +321,9 @@ class AsyncHerpBaseClient:
         response = await self._make_request("PUT", endpoint, **kwargs)
         return response.json()
 
-    @async_smart_retry(max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,))
+    @async_smart_retry(
+        max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
+    )
     async def delete(self, endpoint: str, **kwargs) -> Dict[str, Any]:
         """
         Async DELETE request

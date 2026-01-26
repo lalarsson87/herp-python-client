@@ -6,11 +6,10 @@ Reusable mixins for common patterns across API clients.
 Eliminates code duplication and ensures consistency.
 """
 
-from typing import Dict, Any, List, Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Any, Callable, Dict, List
 
 from ..utils.logging import get_logger
-
 
 logger = get_logger(__name__)
 
@@ -42,7 +41,7 @@ class BatchFetchMixin:
         ids: List[str],
         fetch_function: Callable[[str], List[Dict[str, Any]]],
         max_workers: int = 5,
-        resource_name: str = "items"
+        resource_name: str = "items",
     ) -> Dict[str, List[Dict[str, Any]]]:
         """
         Batch fetch items for multiple IDs concurrently
@@ -81,8 +80,7 @@ class BatchFetchMixin:
         with ThreadPoolExecutor(max_workers=max_workers) as executor:
             # Submit all tasks
             future_to_id = {
-                executor.submit(fetch_for_id, item_id): item_id
-                for item_id in ids
+                executor.submit(fetch_for_id, item_id): item_id for item_id in ids
             }
 
             # Collect results as they complete
@@ -92,10 +90,10 @@ class BatchFetchMixin:
                 if error:
                     errors[item_id] = error
                     # Record error metric if client has metrics
-                    if hasattr(self, 'client') and hasattr(self.client, 'metrics'):
+                    if hasattr(self, "client") and hasattr(self.client, "metrics"):
                         self.client.metrics.increment_counter(
                             f"herp.batch.{resource_name}.errors",
-                            labels={"error": "fetch_failed"}
+                            labels={"error": "fetch_failed"},
                         )
 
         # Log summary
@@ -105,14 +103,12 @@ class BatchFetchMixin:
         )
 
         # Record metrics if available
-        if hasattr(self, 'client') and hasattr(self.client, 'metrics'):
+        if hasattr(self, "client") and hasattr(self.client, "metrics"):
             self.client.metrics.increment_counter(
-                f"herp.batch.{resource_name}.total",
-                value=len(ids)
+                f"herp.batch.{resource_name}.total", value=len(ids)
             )
             self.client.metrics.increment_counter(
-                f"herp.batch.{resource_name}.success",
-                value=len(results) - len(errors)
+                f"herp.batch.{resource_name}.success", value=len(results) - len(errors)
             )
 
         return results
@@ -142,7 +138,7 @@ class PaginationMixin:
         fetch_function: Callable,
         limit: int = 100,
         max_pages: int = None,
-        **kwargs
+        **kwargs,
     ):
         """
         Iterate over all pages using a fetch function
@@ -159,10 +155,7 @@ class PaginationMixin:
         from .pagination import HerpPaginator
 
         paginator = HerpPaginator(
-            fetch_function=fetch_function,
-            limit=limit,
-            max_pages=max_pages,
-            **kwargs
+            fetch_function=fetch_function, limit=limit, max_pages=max_pages, **kwargs
         )
 
         yield from paginator
@@ -179,7 +172,7 @@ class ValidationMixin:
         self,
         data: Dict[str, Any],
         required_fields: List[str],
-        entity_name: str = "entity"
+        entity_name: str = "entity",
     ) -> None:
         """
         Validate that required fields are present
@@ -196,16 +189,14 @@ class ValidationMixin:
 
         if missing:
             fields_str = ", ".join(missing)
-            raise ValueError(
-                f"Missing required fields for {entity_name}: {fields_str}"
-            )
+            raise ValueError(f"Missing required fields for {entity_name}: {fields_str}")
 
     def _validate_field_values(
         self,
         data: Dict[str, Any],
         field: str,
         allowed_values: List[Any],
-        entity_name: str = "entity"
+        entity_name: str = "entity",
     ) -> None:
         """
         Validate that a field has an allowed value
@@ -235,11 +226,7 @@ class MetricsMixin:
     """
 
     def _record_operation_metric(
-        self,
-        operation: str,
-        success: bool = True,
-        error: str = None,
-        **labels
+        self, operation: str, success: bool = True, error: str = None, **labels
     ) -> None:
         """
         Record metric for an operation
@@ -250,18 +237,14 @@ class MetricsMixin:
             error: Error message if failed
             **labels: Additional metric labels
         """
-        if not hasattr(self, 'client') or not hasattr(self.client, 'metrics'):
+        if not hasattr(self, "client") or not hasattr(self.client, "metrics"):
             return
 
         # Determine status
         status = "success" if success else "error"
 
         # Base labels
-        metric_labels = {
-            "operation": operation,
-            "status": status,
-            **labels
-        }
+        metric_labels = {"operation": operation, "status": status, **labels}
 
         # Add error label if present
         if error:
@@ -269,8 +252,7 @@ class MetricsMixin:
 
         # Record counter
         self.client.metrics.increment_counter(
-            f"herp.api.operations",
-            labels=metric_labels
+            "herp.api.operations", labels=metric_labels
         )
 
 
@@ -292,10 +274,7 @@ class CacheMixin:
     """
 
     def _cached_fetch(
-        self,
-        cache_key: str,
-        fetch_function: Callable,
-        ttl: int = 300
+        self, cache_key: str, fetch_function: Callable, ttl: int = 300
     ) -> Any:
         """
         Fetch with caching
@@ -309,7 +288,7 @@ class CacheMixin:
             Cached or freshly fetched data
         """
         # Check if client has cache manager
-        if not hasattr(self, 'client') or not hasattr(self.client, 'cache_manager'):
+        if not hasattr(self, "client") or not hasattr(self.client, "cache_manager"):
             # No cache available, fetch directly
             return fetch_function()
 
@@ -335,6 +314,6 @@ class CacheMixin:
         Args:
             cache_key: Cache key to invalidate
         """
-        if hasattr(self, 'client') and hasattr(self.client, 'cache_manager'):
+        if hasattr(self, "client") and hasattr(self.client, "cache_manager"):
             self.client.cache_manager.delete(cache_key)
             logger.debug(f"Invalidated cache for {cache_key}")

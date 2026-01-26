@@ -5,13 +5,12 @@ HERP Timeline API Client
 Handles timeline comment operations for candidates.
 """
 
-from typing import Dict, Any, List
+from typing import Any, Dict, List
 
-from ..utils.validators import validate_list_response
 from ..utils.logging import get_logger
+from ..utils.validators import validate_list_response
 from .base_client import HerpBaseClient
 from .schemas import HerpTimelineCommentsListResponse
-
 
 logger = get_logger(__name__)
 
@@ -33,10 +32,7 @@ class TimelineAPI:
         self.client = client
 
     @validate_list_response(HerpTimelineCommentsListResponse, strict=False)
-    def list(
-        self,
-        candidacy_id: str
-    ) -> List[Dict[str, Any]]:
+    def list(self, candidacy_id: str) -> List[Dict[str, Any]]:
         """
         List timeline comments for a candidacy
 
@@ -50,10 +46,7 @@ class TimelineAPI:
         return data.get("comments", data.get("data", []))
 
     def add_comment(
-        self,
-        candidacy_id: str,
-        comment: str,
-        content_type: str = "text/plain"
+        self, candidacy_id: str, comment: str, content_type: str = "text/plain"
     ) -> Dict[str, Any]:
         """
         Add timeline comment
@@ -68,8 +61,5 @@ class TimelineAPI:
         """
         return self.client.post(
             f"/v1/candidacies/{candidacy_id}/timeline-comments",
-            json={
-                "comment": comment,
-                "contentType": content_type
-            }
+            json={"comment": comment, "contentType": content_type},
         )
