@@ -32,6 +32,7 @@ class PermanentError(HerpNotionError):
 # HERP API Exceptions
 # ============================================================================
 
+
 class HerpAPIError(HerpNotionError):
     """Base exception for HERP API errors"""
 
@@ -77,6 +78,7 @@ class HerpNetworkError(TransientError, HerpAPIError):
 # ============================================================================
 # Notion API Exceptions
 # ============================================================================
+
 
 class NotionAPIError(HerpNotionError):
     """Base exception for Notion API errors"""
@@ -124,6 +126,7 @@ class NotionNetworkError(TransientError, NotionAPIError):
 # Sync Exceptions
 # ============================================================================
 
+
 class SyncError(HerpNotionError):
     """Base exception for sync operation errors"""
 
@@ -152,6 +155,7 @@ class SyncTimeoutError(TransientError, SyncError):
 # Cache Exceptions
 # ============================================================================
 
+
 class CacheError(HerpNotionError):
     """Base exception for cache errors"""
 
@@ -174,6 +178,7 @@ class CacheSerializationError(PermanentError, CacheError):
 # Circuit Breaker Exceptions
 # ============================================================================
 
+
 class CircuitBreakerError(TransientError):
     """Circuit breaker is open (service is down)"""
 
@@ -183,6 +188,7 @@ class CircuitBreakerError(TransientError):
 # ============================================================================
 # Retry Exceptions
 # ============================================================================
+
 
 class RetryError(HerpNotionError):
     """Base exception for retry mechanism errors"""
@@ -200,10 +206,9 @@ class RetryBudgetExceededError(RetryError):
 # Helper Functions
 # ============================================================================
 
+
 def exception_from_http_status(
-    status_code: int,
-    message: str,
-    api: str = "herp"
+    status_code: int, message: str, api: str = "herp"
 ) -> HerpNotionError:
     """
     Create appropriate exception from HTTP status code
