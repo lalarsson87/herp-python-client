@@ -151,9 +151,7 @@ class AdaptiveRateLimiter:
             cutoff_time = current_time - 60.0
 
             # Count requests in last minute
-            recent_requests = sum(
-                1 for t in self._request_times if t >= cutoff_time
-            )
+            recent_requests = sum(1 for t in self._request_times if t >= cutoff_time)
 
             return {
                 "requests_per_minute": self.requests_per_minute,
@@ -300,16 +298,12 @@ class AsyncRateLimiter:
         cutoff_time = current_time - 60.0
 
         # Count requests in last minute
-        recent_requests = sum(
-            1 for t in self._request_times if t >= cutoff_time
-        )
+        recent_requests = sum(1 for t in self._request_times if t >= cutoff_time)
 
         return {
             "requests_per_minute": self.requests_per_minute,
             "requests_per_second": self.requests_per_second,
             "min_delay": self.min_delay,
             "recent_requests": recent_requests,
-            "requests_remaining": max(
-                0, self.requests_per_minute - recent_requests
-            ),
+            "requests_remaining": max(0, self.requests_per_minute - recent_requests),
         }

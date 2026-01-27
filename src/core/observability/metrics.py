@@ -46,7 +46,9 @@ class MetricsCollector:
         self._lock = Lock()
         logger.info(f"MetricsCollector initialized (enabled={enabled})")
 
-    def increment(self, metric_name: str, value: int = 1, tags: Optional[Dict[str, str]] = None) -> None:
+    def increment(
+        self, metric_name: str, value: int = 1, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """
         Increment a counter metric
 
@@ -64,7 +66,9 @@ class MetricsCollector:
                 MetricData(name=metric_name, value=value, tags=tags or {})
             )
 
-    def gauge(self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def gauge(
+        self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """
         Set a gauge metric
 
@@ -82,7 +86,12 @@ class MetricsCollector:
                 MetricData(name=metric_name, value=value, tags=tags or {})
             )
 
-    def timing(self, metric_name: str, duration_ms: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def timing(
+        self,
+        metric_name: str,
+        duration_ms: float,
+        tags: Optional[Dict[str, str]] = None,
+    ) -> None:
         """
         Record a timing metric
 
@@ -99,7 +108,9 @@ class MetricsCollector:
                 MetricData(name=metric_name, value=duration_ms, tags=tags or {})
             )
 
-    def record(self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None) -> None:
+    def record(
+        self, metric_name: str, value: float, tags: Optional[Dict[str, str]] = None
+    ) -> None:
         """
         Record a generic metric
 

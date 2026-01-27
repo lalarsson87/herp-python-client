@@ -101,6 +101,7 @@ from .mixins import (
     PaginationMixin,
     ValidationMixin,
 )
+
 # Models - currently not implemented
 # from .models import (
 #     Candidacy,

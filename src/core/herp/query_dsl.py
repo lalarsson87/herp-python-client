@@ -12,6 +12,7 @@ Supports:
 - Serialization to REST params, GraphQL, etc.
 """
 
+from typing import Any, Dict, List, Literal, Union
 from datetime import datetime
 from enum import Enum
 

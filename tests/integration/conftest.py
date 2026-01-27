@@ -12,14 +12,13 @@ import pytest
 def integration_test_config():
     """
     Configuration for integration tests
-    
+
     Returns dict with test configuration including API credentials.
     """
     return {
         "herp_api_key": os.getenv("HERP_API_KEY", "test_api_key_for_vcr_playback"),
         "herp_base_url": os.getenv(
-            "HERP_BASE_URL",
-            "https://public-api.herp.cloud/hire/public"
+            "HERP_BASE_URL", "https://public-api.herp.cloud/hire/public"
         ),
         "vcr_mode": os.getenv("VCR_MODE", "once"),  # once, new_episodes, all
     }
@@ -39,25 +38,26 @@ def check_vcr_setup():
 def pytest_configure(config):
     """Register integration test marker"""
     config.addinivalue_line(
-        "markers",
-        "integration: Integration tests with real API interactions (use VCR)"
+        "markers", "integration: Integration tests with real API interactions (use VCR)"
     )
 
 
 def pytest_collection_modifyitems(config, items):
     """
     Modify test collection to handle integration tests
-    
+
     - Skip integration tests if --integration flag not provided
     - Add integration marker to all tests in integration directory
     """
-    skip_integration = pytest.mark.skip(reason="Use --integration to run integration tests")
-    
+    skip_integration = pytest.mark.skip(
+        reason="Use --integration to run integration tests"
+    )
+
     for item in items:
         # Add integration marker to all tests in integration directory
         if "integration" in str(item.fspath):
             item.add_marker(pytest.mark.integration)
-        
+
         # Skip integration tests unless --integration flag provided
         if "integration" in item.keywords:
             if not config.getoption("--integration", default=False):
@@ -70,11 +70,11 @@ def pytest_addoption(parser):
         "--integration",
         action="store_true",
         default=False,
-        help="Run integration tests (requires API credentials or VCR cassettes)"
+        help="Run integration tests (requires API credentials or VCR cassettes)",
     )
     parser.addoption(
         "--record-vcr",
         action="store_true",
         default=False,
-        help="Re-record VCR cassettes (requires API credentials)"
+        help="Re-record VCR cassettes (requires API credentials)",
     )

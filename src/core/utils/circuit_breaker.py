@@ -71,7 +71,7 @@ class CircuitBreaker:
             name=config.name,
             fail_max=config.fail_max,
             success_threshold=config.success_threshold,
-            timeout_duration=config.timeout_duration
+            timeout_duration=config.timeout_duration,
         )
 
     def call(self, func: Callable, *args, **kwargs) -> Any:
@@ -97,7 +97,7 @@ class CircuitBreaker:
                     "circuit_breaker.rejected",
                     name=self.config.name,
                     state=self.state.value,
-                    failure_count=self.failure_count
+                    failure_count=self.failure_count,
                 )
                 raise CircuitBreakerOpenError(
                     f"Circuit breaker {self.config.name} is open"
@@ -120,7 +120,7 @@ class CircuitBreaker:
                 name=self.config.name,
                 state=self.state.value,
                 success_count=self.success_count,
-                success_threshold=self.config.success_threshold
+                success_threshold=self.config.success_threshold,
             )
 
             if self.success_count >= self.config.success_threshold:
@@ -139,7 +139,7 @@ class CircuitBreaker:
             name=self.config.name,
             state=self.state.value,
             failure_count=self.failure_count,
-            fail_max=self.config.fail_max
+            fail_max=self.config.fail_max,
         )
 
         if self.state == CircuitState.HALF_OPEN:
@@ -163,7 +163,7 @@ class CircuitBreaker:
             "circuit_breaker.opened",
             name=self.config.name,
             failure_count=self.failure_count,
-            fail_max=self.config.fail_max
+            fail_max=self.config.fail_max,
         )
 
     def _transition_to_half_open(self) -> None:
@@ -173,7 +173,7 @@ class CircuitBreaker:
         logger.info(
             "circuit_breaker.half_opened",
             name=self.config.name,
-            timeout_duration=self.config.timeout_duration
+            timeout_duration=self.config.timeout_duration,
         )
 
     def _transition_to_closed(self) -> None:
@@ -184,7 +184,7 @@ class CircuitBreaker:
         logger.info(
             "circuit_breaker.closed",
             name=self.config.name,
-            success_count=self.success_count
+            success_count=self.success_count,
         )
 
     def reset(self) -> None:

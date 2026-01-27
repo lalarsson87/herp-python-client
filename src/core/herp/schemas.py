@@ -20,7 +20,6 @@ Usage:
 
 from typing import Any, Dict, List, Literal, NotRequired, TypedDict
 
-
 # ============================================================================
 # Nested Email Schema
 # ============================================================================

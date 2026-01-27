@@ -44,13 +44,13 @@ def test_list_candidacies(herp_client):
     """Test listing candidacies with VCR recording"""
     # This will record the HTTP interaction on first run
     # Subsequent runs will replay from cassette
-    
+
     candidacies = herp_client.candidacies.list(limit=5)
 
     assert isinstance(candidacies, list)
     # Note: HERP API ignores limit parameter and returns all candidacies
     # Just verify we got a list
-    
+
     if candidacies:
         candidacy = candidacies[0]
         assert "id" in candidacy
@@ -66,12 +66,12 @@ def test_get_candidacy(herp_client):
     """Test getting a specific candidacy"""
     # First get a list to find a candidacy ID
     candidacies = herp_client.candidacies.list(limit=1)
-    
+
     if not candidacies:
         pytest.skip("No candidacies available for testing")
-    
+
     candidacy_id = candidacies[0]["id"]
-    
+
     # Get the specific candidacy
     candidacy = herp_client.candidacies.get(candidacy_id)
 
@@ -85,7 +85,9 @@ def test_get_candidacy(herp_client):
 
 @pytest.mark.integration
 @pytest.mark.vcr()
-@pytest.mark.skip(reason="CandidaciesAPI.list() doesn't support status filter parameter")
+@pytest.mark.skip(
+    reason="CandidaciesAPI.list() doesn't support status filter parameter"
+)
 def test_list_candidacies_with_filters(herp_client):
     """Test listing candidacies with filters"""
     # Note: The API doesn't support filtering by status in the list() method
@@ -118,7 +120,7 @@ def test_candidacy_pagination(herp_client):
 def test_create_candidacy(herp_client):
     """Test creating a candidacy (skipped by default)"""
     from src.core.herp.builders import CandidacyBuilder
-    
+
     candidacy_data = (
         CandidacyBuilder()
         .with_name("Test Candidate")
@@ -126,13 +128,13 @@ def test_create_candidacy(herp_client):
         .for_requisition("req_test_001")
         .build()
     )
-    
+
     candidacy = herp_client.candidacies.create(candidacy_data)
-    
+
     assert candidacy["name"] == "Test Candidate"
     assert candidacy["email"] == "test@example.com"
     assert "id" in candidacy
-    
+
     # Cleanup: terminate the test candidacy
     herp_client.candidacies.terminate(candidacy["id"])
 
@@ -142,7 +144,7 @@ def test_create_candidacy(herp_client):
 def test_error_handling_not_found(herp_client):
     """Test error handling for non-existent candidacy"""
     from src.core.errors.exceptions import HerpNotFoundError
-    
+
     with pytest.raises(HerpNotFoundError):
         herp_client.candidacies.get("cand_nonexistent_12345")
 
@@ -152,10 +154,10 @@ def test_error_handling_not_found(herp_client):
 def test_candidacy_schema_validation(herp_client):
     """Test that returned candidacy matches schema"""
     candidacies = herp_client.candidacies.list(limit=1)
-    
+
     if not candidacies:
         pytest.skip("No candidacies available for testing")
-    
+
     candidacy = candidacies[0]
 
     # Required fields (camelCase as per API)

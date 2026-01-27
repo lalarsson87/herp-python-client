@@ -99,9 +99,7 @@ class HerpPaginator:
         """
         offset = (page_num - 1) * self.limit
 
-        logger.debug(
-            f"Fetching page {page_num} (offset={offset}, limit={self.limit})"
-        )
+        logger.debug(f"Fetching page {page_num} (offset={offset}, limit={self.limit})")
         result = self.fetch_func(offset=offset, limit=self.limit, **self.kwargs)
 
         # Normalize response format

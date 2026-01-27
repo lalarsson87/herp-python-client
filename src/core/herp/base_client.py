@@ -126,12 +126,16 @@ class HerpBaseClient:
             # Record metrics (always, regardless of success/failure)
             self.metrics.increment(
                 "herp.api.requests",
-                tags={"method": method, "endpoint": endpoint, "status": str(response.status_code)}
+                tags={
+                    "method": method,
+                    "endpoint": endpoint,
+                    "status": str(response.status_code),
+                },
             )
             self.metrics.timing(
                 "herp.api.duration",
                 duration_ms,
-                tags={"method": method, "endpoint": endpoint}
+                tags={"method": method, "endpoint": endpoint},
             )
 
             # Handle errors
@@ -140,9 +144,7 @@ class HerpBaseClient:
             elif response.status_code == 401:
                 raise HerpAuthenticationError("Authentication failed")
             elif response.status_code == 404:
-                raise HerpNotFoundError(
-                    f"Resource not found: {response.text}"
-                )
+                raise HerpNotFoundError(f"Resource not found: {response.text}")
             elif response.status_code >= 400:
                 raise HerpAPIError(
                     f"API error: {response.status_code} - {response.text}"
@@ -150,7 +152,12 @@ class HerpBaseClient:
 
             return response
 
-        except (HerpAPIError, HerpRateLimitError, HerpAuthenticationError, HerpNotFoundError):
+        except (
+            HerpAPIError,
+            HerpRateLimitError,
+            HerpAuthenticationError,
+            HerpNotFoundError,
+        ):
             # Re-raise our own exceptions (already recorded in metrics above)
             raise
         except Exception as e:
@@ -158,12 +165,16 @@ class HerpBaseClient:
             duration_ms = (time.time() - start_time) * 1000
             self.metrics.increment(
                 "herp.api.errors",
-                tags={"method": method, "endpoint": endpoint, "error_type": type(e).__name__}
+                tags={
+                    "method": method,
+                    "endpoint": endpoint,
+                    "error_type": type(e).__name__,
+                },
             )
             self.metrics.timing(
                 "herp.api.duration",
                 duration_ms,
-                tags={"method": method, "endpoint": endpoint}
+                tags={"method": method, "endpoint": endpoint},
             )
             raise
 

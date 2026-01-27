@@ -45,11 +45,7 @@ class CacheManager:
         self.max_size = max_size
         self._cache: Dict[str, CacheEntry] = {}
         self._lock = Lock()
-        logger.info(
-            "cache.initialized",
-            default_ttl=default_ttl,
-            max_size=max_size
-        )
+        logger.info("cache.initialized", default_ttl=default_ttl, max_size=max_size)
 
     def get(self, key: str) -> Optional[Any]:
         """
@@ -96,12 +92,7 @@ class CacheManager:
             expires_at = time.time() + ttl
 
             self._cache[key] = CacheEntry(value=value, expires_at=expires_at)
-            logger.debug(
-                "cache.set",
-                key=key,
-                ttl=ttl,
-                cache_size=len(self._cache)
-            )
+            logger.debug("cache.set", key=key, ttl=ttl, cache_size=len(self._cache))
 
     def delete(self, key: str) -> None:
         """

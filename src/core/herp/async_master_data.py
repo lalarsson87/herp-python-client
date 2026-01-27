@@ -5,7 +5,7 @@ HERP Async Master Data API Client
 Async version of master data operations with caching.
 """
 
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_logger
 from ..utils.validators import validate_list_response

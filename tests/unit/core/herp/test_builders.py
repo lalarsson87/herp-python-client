@@ -22,10 +22,7 @@ class TestCandidacyBuilder(unittest.TestCase):
     def test_basic_build(self):
         """Test building candidacy with required fields"""
         result = (
-            CandidacyBuilder()
-            .with_name("Jane Doe")
-            .for_requisition("req_001")
-            .build()
+            CandidacyBuilder().with_name("Jane Doe").for_requisition("req_001").build()
         )
 
         self.assertEqual(result["name"], "Jane Doe")
@@ -153,9 +150,7 @@ class TestEvaluationResponseBuilder(unittest.TestCase):
     def test_score_question(self):
         """Test adding question score"""
         result = (
-            EvaluationResponseBuilder()
-            .score_question("q1", 5, max_score=5)
-            .build()
+            EvaluationResponseBuilder().score_question("q1", 5, max_score=5).build()
         )
 
         self.assertEqual(len(result["questions"]), 1)
@@ -254,11 +249,7 @@ class TestTimelineCommentBuilder(unittest.TestCase):
 
     def test_basic_comment(self):
         """Test building basic comment"""
-        result = (
-            TimelineCommentBuilder()
-            .with_content("This is a comment")
-            .build()
-        )
+        result = TimelineCommentBuilder().with_content("This is a comment").build()
 
         self.assertEqual(result["content"], "This is a comment")
         self.assertEqual(result["content_type"], "text/plain")

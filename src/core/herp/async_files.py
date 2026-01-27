@@ -7,6 +7,7 @@ Async version of file upload/download operations.
 
 import asyncio
 from pathlib import Path
+from typing import Any, Dict, List, Optional
 
 from ..utils.logging import get_logger
 from ..utils.validators import validate_list_response, validate_single_response

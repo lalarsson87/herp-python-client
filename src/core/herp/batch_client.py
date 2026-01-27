@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar
 
+from ..errors.exceptions import is_transient_error
 from ..observability.metrics import get_metrics_collector
 from ..utils.logging import get_logger
 from .client import HerpClient

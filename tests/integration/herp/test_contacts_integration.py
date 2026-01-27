@@ -37,17 +37,17 @@ def test_list_contacts(herp_client):
     """Test listing contacts for a candidacy"""
     # First get a candidacy
     candidacies = herp_client.candidacies.list(limit=1)
-    
+
     if not candidacies:
         pytest.skip("No candidacies available")
-    
+
     candidacy_id = candidacies[0]["id"]
-    
+
     # List contacts
     contacts = herp_client.contacts.list(candidacy_id)
-    
+
     assert isinstance(contacts, list)
-    
+
     if contacts:
         contact = contacts[0]
         assert "id" in contact
@@ -64,7 +64,7 @@ def test_get_contact(herp_client):
     """Test getting a specific contact"""
     # Get a candidacy with contacts
     candidacies = herp_client.candidacies.list(limit=5)
-    
+
     contact_found = False
     for candidacy in candidacies:
         contacts = herp_client.contacts.list(candidacy["id"])
@@ -73,10 +73,10 @@ def test_get_contact(herp_client):
             candidacy_id = candidacy["id"]
             contact_found = True
             break
-    
+
     if not contact_found:
         pytest.skip("No contacts available for testing")
-    
+
     # Get the specific contact
     contact = herp_client.contacts.get(candidacy_id, contact_id)
 
@@ -93,14 +93,14 @@ def test_create_contact(herp_client):
     """Test creating a contact/interview"""
     from src.core.herp.builders import ContactBuilder
     from datetime import datetime, timedelta
-    
+
     # Get a test candidacy
     candidacies = herp_client.candidacies.list(limit=1)
     if not candidacies:
         pytest.skip("No candidacies available")
-    
+
     candidacy_id = candidacies[0]["id"]
-    
+
     # Create contact
     scheduled_time = datetime.now() + timedelta(days=7)
     contact_data = (
@@ -112,7 +112,7 @@ def test_create_contact(herp_client):
         .at_location("https://zoom.us/j/test")
         .build()
     )
-    
+
     contact = herp_client.contacts.create(candidacy_id, contact_data)
 
     assert contact["type"] == "technical_interview"
@@ -125,7 +125,7 @@ def test_create_contact(herp_client):
 def test_contact_schema_validation(herp_client):
     """Test contact response matches schema"""
     candidacies = herp_client.candidacies.list(limit=5)
-    
+
     for candidacy in candidacies:
         contacts = herp_client.contacts.list(candidacy["id"])
         if contacts:
@@ -147,5 +147,5 @@ def test_contact_schema_validation(herp_client):
                 assert isinstance(contact["evaluations"], list)
 
             return  # Found and validated one contact
-    
+
     pytest.skip("No contacts found for schema validation")

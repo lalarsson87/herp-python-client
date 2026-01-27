@@ -355,22 +355,13 @@ class TestRealWorldScenarios(unittest.TestCase):
 
     def test_find_recent_applications(self):
         """Test finding recent applications"""
-        q = (
-            CandidacyQuery()
-            .created_after("2026-01-01")
-            .has_email()
-            .active_only()
-        )
+        q = CandidacyQuery().created_after("2026-01-01").has_email().active_only()
 
         self.assertEqual(len(q.filters), 3)
 
     def test_find_hired_candidates_in_date_range(self):
         """Test finding hired candidates in date range"""
-        q = (
-            CandidacyQuery()
-            .hired_only()
-            .created_between("2025-01-01", "2025-12-31")
-        )
+        q = CandidacyQuery().hired_only().created_between("2025-01-01", "2025-12-31")
 
         self.assertEqual(len(q.filters), 2)
 
@@ -384,11 +375,7 @@ class TestRealWorldScenarios(unittest.TestCase):
 
     def test_find_candidates_with_specific_tags(self):
         """Test finding candidates with specific tags"""
-        q = (
-            CandidacyQuery()
-            .with_tags(["backend", "golang"])
-            .by_requisition("req_001")
-        )
+        q = CandidacyQuery().with_tags(["backend", "golang"]).by_requisition("req_001")
 
         # with_tags adds 2 filters (one per tag)
         self.assertEqual(len(q.filters), 3)
