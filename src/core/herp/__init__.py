@@ -48,7 +48,7 @@ from .assignments import AssignmentsAPI
 from .async_assignments import AsyncAssignmentsAPI
 from .async_base_client import AsyncHerpBaseClient
 from .async_batch_client import AsyncBatchHerpClient, AsyncBatchResult
-from .async_candidates import AsyncCandidaciesAPI, AsyncHerpPaginator, SearchQuery
+from .async_candidates import AsyncCandidaciesAPI, AsyncHerpPaginator
 
 # Async clients
 from .async_client import AsyncHerpClient
@@ -73,7 +73,6 @@ from .evaluations import EvaluationsAPI
 
 # Event Sourcing
 from .events import (
-    AnalyticsProjection,
     AssignmentAdded,
     AssignmentRemoved,
     AuditLogProjection,
@@ -102,19 +101,20 @@ from .mixins import (
     PaginationMixin,
     ValidationMixin,
 )
-from .models import (
-    Candidacy,
-    CandidacyStatus,
-    Contact,
-    ContactType,
-    Evaluation,
-    File,
-    FileType,
-    Requisition,
-    TerminationReason,
-    TimelineComment,
-    User,
-)
+# Models - currently not implemented
+# from .models import (
+#     Candidacy,
+#     CandidacyStatus,
+#     Contact,
+#     ContactType,
+#     Evaluation,
+#     File,
+#     FileType,
+#     Requisition,
+#     TerminationReason,
+#     TimelineComment,
+#     User,
+# )
 
 # Query DSL
 from .query_dsl import (
@@ -126,7 +126,7 @@ from .query_dsl import (
     candidacy_query,
     query,
 )
-from .rate_limiter import AdaptiveRateLimiter, AsyncRateLimiter, HerpRateLimiter
+from .rate_limiter import AdaptiveRateLimiter, AsyncRateLimiter
 from .timeline import TimelineAPI
 
 # Webhooks

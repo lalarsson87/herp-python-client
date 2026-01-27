@@ -185,6 +185,12 @@ class CircuitBreakerError(TransientError):
     pass
 
 
+class CircuitBreakerOpenError(CircuitBreakerError):
+    """Circuit breaker is open and rejecting requests"""
+
+    pass
+
+
 # ============================================================================
 # Retry Exceptions
 # ============================================================================

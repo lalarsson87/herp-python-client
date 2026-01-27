@@ -453,6 +453,46 @@ class EvaluationResponseBuilder:
         return self._data.copy()
 
 
+class TimelineCommentBuilder:
+    """Builder for timeline comments with fluent API"""
+
+    def __init__(self):
+        self._data: Dict[str, Any] = {
+            "content": "",
+            "content_type": "text/plain",
+        }
+
+    def with_content(self, content: str) -> "TimelineCommentBuilder":
+        """Set comment content"""
+        self._data["content"] = content
+        return self
+
+    def with_content_type(self, content_type: str) -> "TimelineCommentBuilder":
+        """Set content type (text/plain or text/markdown)"""
+        self._data["content_type"] = content_type
+        return self
+
+    def as_markdown(self) -> "TimelineCommentBuilder":
+        """Set content type to markdown"""
+        return self.with_content_type("text/markdown")
+
+    def build(self) -> Dict[str, Any]:
+        """
+        Build and validate timeline comment data
+
+        Returns:
+            Dictionary ready for API submission
+
+        Raises:
+            ValueError: If content is empty
+        """
+        if not self._data["content"]:
+            raise ValueError("Content is required for timeline comment")
+
+        return self._data.copy()
+
+
 # Convenience aliases for backward compatibility
 CandidateBuilder = CandidacyBuilder  # Alternative name
 InterviewBuilder = ContactBuilder  # Alternative name
+EvaluationBuilder = EvaluationResponseBuilder  # Alternative name
