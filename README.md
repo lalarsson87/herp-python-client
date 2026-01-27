@@ -326,6 +326,35 @@ mypy src/
 pre-commit run --all-files
 ```
 
+### Pre-Push Workflow (REQUIRED)
+
+**⚠️ IMPORTANT: Always run pre-push checks before pushing code**
+
+```bash
+# Run comprehensive pre-push verification
+make pre-push
+
+# Or use the script directly
+bash scripts/pre-push-check.sh
+```
+
+This runs:
+- ✅ Code formatting check (black)
+- ✅ Import ordering check (isort)
+- ✅ Critical error check (flake8)
+- ✅ Type checking (mypy)
+- ✅ Full test suite
+- ✅ Multi-Python version simulation
+- ✅ Common issue detection
+
+**Optional**: Install automatic pre-push hook:
+```bash
+cp scripts/pre-push-hook.sh .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+**See**: `docs/DEVELOPMENT_WORKFLOW.md` for complete workflow documentation
+
 ### Documentation
 
 ```bash
