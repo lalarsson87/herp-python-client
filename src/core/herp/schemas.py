@@ -22,6 +22,18 @@ from typing import Any, Dict, List, Literal, NotRequired, TypedDict
 
 
 # ============================================================================
+# Nested Email Schema
+# ============================================================================
+
+
+class HerpAgentEmailAddress(TypedDict):
+    """Agent email address information"""
+
+    mainEmailAddress: str
+    subEmailAddresses: List[str]
+
+
+# ============================================================================
 # Nested Channel Schemas
 # ============================================================================
 
@@ -106,9 +118,21 @@ class HerpCandidacyResponse(TypedDict):
 
     **Field Names**: Uses camelCase as returned by HERP API
     (e.g., `requisitionId`, not `requisition_id`)
+
+    **Important**: The HERP API returns different field sets depending on the endpoint:
+
+    - **LIST** (GET /v1/candidacies): Returns 20 fields including email,
+      telephoneNumber, age, company, education, career, note, updatedAt, etc.
+
+    - **SINGLE** (GET /v1/candidacies/{id}): Returns only 12 fields including
+      agentEmailAddress and links, but missing email, telephoneNumber, and
+      other profile fields.
+
+    Therefore, most fields are marked NotRequired to handle both response types.
+    Only fields that appear in ALL response types are marked as required.
     """
 
-    # Required fields
+    # Required fields (present in both LIST and SINGLE responses)
     id: str
     name: str
     status: Literal["active", "hired", "terminated"]
@@ -116,12 +140,11 @@ class HerpCandidacyResponse(TypedDict):
     appliedAt: str  # ISO 8601 datetime
     step: str
     stepUpdatedAt: str  # ISO 8601 datetime
-    updatedAt: str  # ISO 8601 datetime
     channel: HerpChannel
     operators: List[str]
     tags: List[str]
 
-    # Optional fields
+    # Optional fields (primarily in LIST responses)
     email: NotRequired[str]
     telephoneNumber: NotRequired[str]
     age: NotRequired[str]
@@ -131,6 +154,11 @@ class HerpCandidacyResponse(TypedDict):
     note: NotRequired[str]
     terminationReason: NotRequired[str]
     terminatedAt: NotRequired[str]  # ISO 8601 datetime
+    updatedAt: NotRequired[str]  # ISO 8601 datetime (in LIST, not SINGLE)
+
+    # Optional fields (primarily in SINGLE responses)
+    agentEmailAddress: NotRequired[HerpAgentEmailAddress]
+    links: NotRequired[List[Any]]  # Empty in sample data, type unclear
 
 
 class HerpCandidaciesListResponse(TypedDict):
@@ -164,6 +192,10 @@ class HerpContactResponse(TypedDict):
     Represents an interview, assessment, or contact event.
 
     **Field Names**: Uses camelCase as returned by HERP API
+
+    **Note**: Fields title, scheduledAt, location, and notes are marked as
+    optional but don't appear in current test data. They may only be present
+    for specific contact types or scheduling states.
     """
 
     # Required fields
@@ -173,9 +205,11 @@ class HerpContactResponse(TypedDict):
     createdAt: str  # ISO 8601 datetime
     createdBy: str  # User ID
 
-    # Optional fields
+    # Optional fields (verified in API responses)
     evaluations: NotRequired[List[HerpEvaluationItem]]
     requireAssessmentSchedule: NotRequired[bool]
+
+    # Optional fields (not yet observed in test data, may be API-supported)
     title: NotRequired[str]
     scheduledAt: NotRequired[str]  # ISO 8601 datetime
     location: NotRequired[str]

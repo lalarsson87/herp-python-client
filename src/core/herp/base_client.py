@@ -15,6 +15,7 @@ from ..cache import CacheManager
 from ..errors.exceptions import (
     HerpAPIError,
     HerpAuthenticationError,
+    HerpNotFoundError,
     HerpRateLimitError,
 )
 from ..observability.metrics import MetricsCollector, get_metrics_collector
@@ -138,6 +139,10 @@ class HerpBaseClient:
                 raise HerpRateLimitError("Rate limit exceeded")
             elif response.status_code == 401:
                 raise HerpAuthenticationError("Authentication failed")
+            elif response.status_code == 404:
+                raise HerpNotFoundError(
+                    f"Resource not found: {response.text}"
+                )
             elif response.status_code >= 400:
                 raise HerpAPIError(
                     f"API error: {response.status_code} - {response.text}"
@@ -145,7 +150,7 @@ class HerpBaseClient:
 
             return response
 
-        except (HerpAPIError, HerpRateLimitError, HerpAuthenticationError):
+        except (HerpAPIError, HerpRateLimitError, HerpAuthenticationError, HerpNotFoundError):
             # Re-raise our own exceptions (already recorded in metrics above)
             raise
         except Exception as e:
