@@ -154,3 +154,200 @@ The fix relies on:
 - GitHub Actions Run: https://github.com/lalarsson87/herp-python-client/actions/runs/21387230126
 - Commit: 62a1cc3
 - Related Documentation: `docs/api-audit-findings.md`
+
+---
+
+## 2026-01-27: Pre-Push Workflow Automation
+
+### Session Summary
+Implemented comprehensive pre-push verification workflow to prevent CI/CD failures by catching issues locally before pushing.
+
+### Motivation
+Following CI/CD failures from Python 3.10 compatibility issues, established a policy: **"Always run tests and local CI/CD dry run before push to prevent regressions"**
+
+### New Files Created
+
+#### 1. `scripts/pre-push-check.sh` (Comprehensive Verification Script)
+**Purpose**: Automated pre-push verification that simulates CI/CD locally
+
+**Checks Performed**:
+1. ✅ Code formatting (black)
+2. ✅ Import ordering (isort)
+3. ✅ Critical errors (flake8)
+4. ✅ Type checking (mypy)
+5. ✅ Full test suite
+6. ✅ Multi-Python version simulation
+7. ✅ Common issues (debug statements, print calls, incomplete TODOs)
+
+**Exit Behavior**: Fails fast on first error, provides clear fix instructions
+
+**Example Output**:
+```
+==========================================
+✅ All pre-push checks passed!
+==========================================
+
+Safe to push. Recommended command:
+  git push origin main
+```
+
+#### 2. `scripts/pre-push-hook.sh` (Optional Git Hook)
+**Purpose**: Automatic enforcement of pre-push checks
+
+**Installation**:
+```bash
+cp scripts/pre-push-hook.sh .git/hooks/pre-push
+chmod +x .git/hooks/pre-push
+```
+
+**Behavior**:
+- Runs `scripts/pre-push-check.sh` before every `git push`
+- Aborts push if checks fail
+- Can be bypassed with `git push --no-verify` (not recommended)
+
+#### 3. `Makefile` (Development Commands)
+**Purpose**: Standardized development workflow commands
+
+**Available Targets**:
+- `make pre-push`: Run comprehensive pre-push verification (REQUIRED)
+- `make test`: Run test suite
+- `make lint`: Run all linters
+- `make format`: Auto-format code
+- `make clean`: Clean temporary files
+- `make install`: Install dependencies
+- `make help`: Show available commands
+
+#### 4. `docs/DEVELOPMENT_WORKFLOW.md` (Complete Workflow Guide)
+**Purpose**: Comprehensive documentation of development workflow
+
+**Sections**:
+- Core principles and pre-push checklist
+- Git workflow best practices
+- Automated git hook setup
+- Common issues and solutions
+- CI/CD simulation guide
+- Performance tips
+- Troubleshooting guide
+
+### Changes to Existing Files
+
+#### `README.md`
+Added "Pre-Push Workflow (REQUIRED)" section:
+- Clear warning about running pre-push checks
+- Quick reference for make commands
+- Installation instructions for git hook
+- Link to comprehensive workflow documentation
+
+#### `src/core/herp/__init__.py`
+Auto-formatted by black during pre-push check testing
+
+### Workflow Usage
+
+**Standard Development Flow**:
+```bash
+# 1. Make changes
+git checkout -b feature/my-feature
+# ... edit files ...
+
+# 2. Run pre-push checks (REQUIRED)
+make pre-push
+
+# 3. Commit and push (only after checks pass)
+git add -A
+git commit -m "feat: my feature"
+git push origin feature/my-feature
+```
+
+**What Gets Caught**:
+- Code formatting violations (black)
+- Import ordering issues (isort)
+- Syntax errors and undefined names (flake8)
+- Type hint issues (mypy)
+- Test failures
+- Python version compatibility issues
+- Debug statements left in code
+- Print statements in source code
+
+### Testing Results
+
+**Pre-Push Check Testing**:
+- Caught formatting issue in `src/core/herp/__init__.py` ✅
+- All checks passed after formatting fix ✅
+- Multi-Python version simulation worked ✅
+
+**CI/CD Results**:
+```
+✓ Test Python 3.10 in 36s
+✓ Test Python 3.11 in 27s
+✓ Test Python 3.12 in 28s
+✓ Lint Code in 22s
+✓ Validate Documentation in 13s
+✓ Build Package in 13s
+```
+
+All jobs passed ✅
+
+### Commits
+
+**feat: add comprehensive pre-push workflow automation** (367afde)
+```
+Implements automated pre-push verification to prevent CI/CD failures
+by catching issues locally before pushing.
+
+Tested:
+- All pre-push checks pass ✅
+- 132 tests passed, 11 skipped ✅
+- Zero critical errors ✅
+- Multi-version simulation works ✅
+```
+
+### Benefits
+
+1. **Prevents CI/CD Failures**: Catches issues before they reach remote CI/CD
+2. **Saves Time**: No need to wait for remote CI/CD to find issues
+3. **Faster Iteration**: Immediate feedback on local machine
+4. **Consistency**: Standardized workflow across all developers
+5. **Quality Assurance**: Ensures code quality before sharing with team
+6. **Multi-Version Testing**: Simulates testing on Python 3.10, 3.11, 3.12
+
+### Performance
+
+**Pre-Push Check Duration**: ~10-15 seconds
+- Code formatting: <1s
+- Import ordering: <1s
+- Flake8: <1s
+- Mypy: ~2s
+- Test suite: ~4s
+- Multi-version simulation: ~4s (single version by default for speed)
+
+**Trade-off**: 10-15 seconds locally vs. waiting 1-2 minutes for remote CI/CD failure notification
+
+### Policy Established
+
+**RULE**: Before every push, run:
+```bash
+make pre-push
+```
+
+**No exceptions**, even for:
+- Urgent hotfixes
+- Documentation-only changes
+- Small typo fixes
+
+**Rationale**: The few minutes spent on pre-push checks saves hours of debugging CI/CD failures and maintains team velocity.
+
+### Future Enhancements
+
+1. **Parallel Test Execution**: Speed up test suite with pytest-xdist
+2. **Selective Testing**: Only run tests affected by changed files
+3. **Coverage Enforcement**: Fail if coverage drops below threshold
+4. **Spell Checking**: Add documentation spell checking to pre-push
+5. **Security Scanning**: Add dependency vulnerability scanning
+
+### References
+
+- GitHub Actions Run: https://github.com/lalarsson87/herp-python-client/actions/runs/21387551500
+- Commit: 367afde
+- Documentation: `docs/DEVELOPMENT_WORKFLOW.md`
+- Scripts: `scripts/pre-push-check.sh`, `scripts/pre-push-hook.sh`
+- Makefile: `Makefile`
