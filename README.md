@@ -65,8 +65,40 @@ contact["created_at"]       # ❌
 
 ## Installation
 
+### Option 1: Isolated Dev Container (Recommended ⭐)
+
+Complete isolated development environment with all tools pre-configured:
+
 ```bash
-pip install -e .
+# 1. Install Docker Desktop and VS Code
+# 2. Install "Dev Containers" extension in VS Code
+# 3. Open project in VS Code
+code herp-client.code-workspace
+
+# 4. Reopen in container
+# Press F1 → "Dev Containers: Reopen in Container"
+```
+
+✅ Auto-installs all dependencies
+✅ Pre-configured linting and formatting
+✅ Includes debugging support
+✅ Consistent across all machines
+
+**See:** `docs/WORKSPACE_SETUP.md` for complete setup guide
+
+### Option 2: Local Installation
+
+```bash
+# Create virtual environment
+python3 -m venv .venv
+source .venv/bin/activate
+
+# Install dependencies
+pip install -e ".[dev]"
+
+# Configure environment
+cp .env.example .env
+# Edit .env with your API keys
 ```
 
 ## Quick Start

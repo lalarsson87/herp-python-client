@@ -1,0 +1,291 @@
+{
+  "folders": [
+    {
+      "path": ".",
+      "name": "HERP Python Client"
+    },
+    {
+      "path": "src",
+      "name": "📦 Source Code"
+    },
+    {
+      "path": "tests",
+      "name": "🧪 Tests"
+    },
+    {
+      "path": "docs",
+      "name": "📚 Documentation"
+    },
+    {
+      "path": "scripts",
+      "name": "🔧 Scripts"
+    }
+  ],
+  "settings": {
+    // Python settings
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+
+    // Linting
+    "python.linting.enabled": true,
+    "python.linting.pylintEnabled": true,
+    "python.linting.flake8Enabled": true,
+    "python.linting.mypyEnabled": true,
+    "python.linting.pylintArgs": [
+      "--rcfile=${workspaceFolder}/pyproject.toml"
+    ],
+    "python.linting.flake8Args": [
+      "--max-line-length=100",
+      "--select=E9,F63,F7,F82"
+    ],
+
+    // Formatting
+    "python.formatting.provider": "black",
+    "python.formatting.blackArgs": [
+      "--line-length=100"
+    ],
+    "[python]": {
+      "editor.formatOnSave": true,
+      "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+      },
+      "editor.defaultFormatter": "ms-python.black-formatter"
+    },
+
+    // Testing
+    "python.testing.pytestEnabled": true,
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestArgs": [
+      "tests",
+      "-v",
+      "--tb=short"
+    ],
+    "python.testing.autoTestDiscoverOnSaveEnabled": true,
+
+    // Editor settings
+    "editor.rulers": [100],
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.trimAutoWhitespace": true,
+    "files.trimTrailingWhitespace": true,
+    "files.insertFinalNewline": true,
+    "files.trimFinalNewlines": true,
+
+    // File exclusions
+    "files.exclude": {
+      "**/__pycache__": true,
+      "**/*.pyc": true,
+      "**/.pytest_cache": true,
+      "**/.mypy_cache": true,
+      "**/*.egg-info": true,
+      "**/.DS_Store": true,
+      "**/node_modules": true,
+      "**/.git": false
+    },
+
+    "files.watcherExclude": {
+      "**/__pycache__/**": true,
+      "**/.pytest_cache/**": true,
+      "**/.mypy_cache/**": true,
+      "**/*.egg-info/**": true,
+      "**/node_modules/**": true
+    },
+
+    // Search exclusions
+    "search.exclude": {
+      "**/__pycache__": true,
+      "**/.pytest_cache": true,
+      "**/.mypy_cache": true,
+      "**/*.egg-info": true,
+      "**/dist": true,
+      "**/build": true
+    },
+
+    // Git settings
+    "git.ignoreLimitWarning": true,
+    "git.autofetch": true,
+    "git.confirmSync": false,
+    "git.enableSmartCommit": true,
+
+    // Terminal
+    "terminal.integrated.env.osx": {
+      "PYTHONPATH": "${workspaceFolder}/src"
+    },
+    "terminal.integrated.env.linux": {
+      "PYTHONPATH": "${workspaceFolder}/src"
+    },
+
+    // File associations
+    "files.associations": {
+      "*.yml": "yaml",
+      ".env*": "properties",
+      "Makefile": "makefile",
+      "*.sh": "shellscript"
+    },
+
+    // Spell checker
+    "cSpell.words": [
+      "herp",
+      "candidacy",
+      "candidacies",
+      "requisition",
+      "pytest",
+      "httpx",
+      "asyncio",
+      "dotenv",
+      "pydantic",
+      "mypy",
+      "pylint",
+      "flake8",
+      "isort",
+      "pyproject"
+    ],
+
+    // Other settings
+    "workbench.colorTheme": "Default Dark+",
+    "workbench.iconTheme": "vs-seti",
+    "explorer.confirmDelete": false,
+    "explorer.confirmDragAndDrop": false
+  },
+
+  "extensions": {
+    "recommendations": [
+      "ms-python.python",
+      "ms-python.vscode-pylance",
+      "ms-python.black-formatter",
+      "ms-python.isort",
+      "ms-python.flake8",
+      "ms-python.pylint",
+      "charliermarsh.ruff",
+      "tamasfe.even-better-toml",
+      "redhat.vscode-yaml",
+      "GitHub.copilot",
+      "eamodio.gitlens",
+      "mhutchie.git-graph",
+      "donjayamanne.githistory",
+      "streetsidesoftware.code-spell-checker",
+      "ms-azuretools.vscode-docker",
+      "ms-vscode-remote.remote-containers"
+    ]
+  },
+
+  "launch": {
+    "version": "0.2.0",
+    "configurations": [
+      {
+        "name": "Python: Current File",
+        "type": "python",
+        "request": "launch",
+        "program": "${file}",
+        "console": "integratedTerminal",
+        "justMyCode": false,
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}/src"
+        }
+      },
+      {
+        "name": "Python: Debug Tests",
+        "type": "python",
+        "request": "launch",
+        "module": "pytest",
+        "args": [
+          "-v",
+          "--tb=short",
+          "${file}"
+        ],
+        "console": "integratedTerminal",
+        "justMyCode": false,
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}/src"
+        }
+      },
+      {
+        "name": "Python: Debug Specific Test",
+        "type": "python",
+        "request": "launch",
+        "module": "pytest",
+        "args": [
+          "-v",
+          "-s",
+          "--tb=short",
+          "${file}::${selectedText}"
+        ],
+        "console": "integratedTerminal",
+        "justMyCode": false,
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}/src"
+        }
+      },
+      {
+        "name": "Python: Run Script",
+        "type": "python",
+        "request": "launch",
+        "program": "${workspaceFolder}/scripts/${input:scriptName}",
+        "console": "integratedTerminal",
+        "env": {
+          "PYTHONPATH": "${workspaceFolder}/src"
+        }
+      }
+    ],
+    "inputs": [
+      {
+        "id": "scriptName",
+        "type": "promptString",
+        "description": "Script name (e.g., sync-herp-notion-full.py)"
+      }
+    ]
+  },
+
+  "tasks": {
+    "version": "2.0.0",
+    "tasks": [
+      {
+        "label": "Run Pre-Push Checks",
+        "type": "shell",
+        "command": "make pre-push",
+        "group": {
+          "kind": "test",
+          "isDefault": true
+        },
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run Tests",
+        "type": "shell",
+        "command": "pytest tests/ -v",
+        "group": "test",
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Format Code",
+        "type": "shell",
+        "command": "make format",
+        "group": "build",
+        "presentation": {
+          "reveal": "silent",
+          "panel": "shared"
+        },
+        "problemMatcher": []
+      },
+      {
+        "label": "Run Linters",
+        "type": "shell",
+        "command": "make lint",
+        "group": "test",
+        "presentation": {
+          "reveal": "always",
+          "panel": "dedicated"
+        },
+        "problemMatcher": []
+      }
+    ]
+  }
+}
