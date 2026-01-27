@@ -46,7 +46,9 @@ class CacheManager:
         self._cache: Dict[str, CacheEntry] = {}
         self._lock = Lock()
         logger.info(
-            f"CacheManager initialized with TTL={default_ttl}s, max_size={max_size}"
+            "cache.initialized",
+            default_ttl=default_ttl,
+            max_size=max_size
         )
 
     def get(self, key: str) -> Optional[Any]:
@@ -62,16 +64,18 @@ class CacheManager:
         with self._lock:
             entry = self._cache.get(key)
             if entry is None:
-                logger.debug(f"Cache miss: {key}")
+                logger.debug("cache.miss", key=key)
                 return None
 
             # Check if expired
-            if time.time() > entry.expires_at:
-                logger.debug(f"Cache expired: {key}")
+            current_time = time.time()
+            if current_time > entry.expires_at:
+                logger.debug("cache.expired", key=key)
                 del self._cache[key]
                 return None
 
-            logger.debug(f"Cache hit: {key}")
+            ttl_remaining = entry.expires_at - current_time
+            logger.debug("cache.hit", key=key, ttl_remaining=ttl_remaining)
             return entry.value
 
     def set(self, key: str, value: Any, ttl: Optional[int] = None) -> None:
@@ -92,7 +96,12 @@ class CacheManager:
             expires_at = time.time() + ttl
 
             self._cache[key] = CacheEntry(value=value, expires_at=expires_at)
-            logger.debug(f"Cache set: {key} (TTL={ttl}s)")
+            logger.debug(
+                "cache.set",
+                key=key,
+                ttl=ttl,
+                cache_size=len(self._cache)
+            )
 
     def delete(self, key: str) -> None:
         """
@@ -104,14 +113,14 @@ class CacheManager:
         with self._lock:
             if key in self._cache:
                 del self._cache[key]
-                logger.debug(f"Cache deleted: {key}")
+                logger.debug("cache.deleted", key=key)
 
     def clear(self) -> None:
         """Clear all cache entries"""
         with self._lock:
             count = len(self._cache)
             self._cache.clear()
-            logger.info(f"Cache cleared: {count} entries removed")
+            logger.info("cache.cleared", entries_removed=count)
 
     def size(self) -> int:
         """
@@ -133,7 +142,7 @@ class CacheManager:
         # Find entry with earliest expiration time
         oldest_key = min(self._cache.keys(), key=lambda k: self._cache[k].expires_at)
         del self._cache[oldest_key]
-        logger.debug(f"Cache evicted (LRU): {oldest_key}")
+        logger.debug("cache.evicted", key=oldest_key, reason="LRU")
 
     def _cleanup_expired(self) -> None:
         """Remove all expired entries from cache"""
@@ -146,7 +155,7 @@ class CacheManager:
             del self._cache[key]
 
         if expired_keys:
-            logger.debug(f"Cleaned up {len(expired_keys)} expired cache entries")
+            logger.debug("cache.cleanup", expired_count=len(expired_keys))
 
     def get_stats(self) -> Dict[str, Any]:
         """
