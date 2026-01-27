@@ -87,3 +87,5 @@ docker-compose.override.yml
 .scrum/
 htmlcov/
 .coverage
+docs/build/
+docs/source/_build/
