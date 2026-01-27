@@ -7,9 +7,6 @@ Tests interview/contact scheduling endpoints.
 import pytest
 
 
-pytest_plugins = ["pytest_vcr"]
-
-
 @pytest.fixture(scope="module")
 def vcr_config():
     """VCR configuration"""
@@ -25,11 +22,13 @@ def herp_client():
     """Create HERP client"""
     import os
     from src.core.herp.client import HerpClient
-    
-    return HerpClient(
-        api_key=os.getenv("HERP_API_KEY", "test_api_key"),
-        base_url=os.getenv("HERP_BASE_URL", "https://public-api.herp.cloud/hire/public")
-    )
+    from src.core.utils.config import HerpConfig
+
+    api_key = os.getenv("HERP_API_KEY", "test_api_key")
+    base_url = os.getenv("HERP_BASE_URL", "https://public-api.herp.cloud/hire")
+
+    config = HerpConfig(api_key=api_key, base_url=base_url)
+    return HerpClient(config=config)
 
 
 @pytest.mark.integration

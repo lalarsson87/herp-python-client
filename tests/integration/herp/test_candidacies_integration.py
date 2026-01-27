@@ -12,9 +12,6 @@ import os
 import pytest
 from unittest.mock import patch
 
-# pytest-vcr configuration
-pytest_plugins = ["pytest_vcr"]
-
 
 @pytest.fixture(scope="module")
 def vcr_config():
@@ -31,14 +28,14 @@ def vcr_config():
 def herp_client():
     """Create HERP client for integration testing"""
     from src.core.herp.client import HerpClient
-    
+    from src.core.utils.config import HerpConfig
+
     # Use test API key or mock key for playback
     api_key = os.getenv("HERP_API_KEY", "test_api_key")
-    
-    return HerpClient(
-        api_key=api_key,
-        base_url=os.getenv("HERP_BASE_URL", "https://public-api.herp.cloud/hire/public")
-    )
+    base_url = os.getenv("HERP_BASE_URL", "https://public-api.herp.cloud/hire")
+
+    config = HerpConfig(api_key=api_key, base_url=base_url)
+    return HerpClient(config=config)
 
 
 @pytest.mark.integration

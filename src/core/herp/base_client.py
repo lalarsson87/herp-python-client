@@ -105,7 +105,7 @@ class HerpBaseClient:
         url = f"{self.base_url}{endpoint}"
 
         # Acquire rate limit token
-        self.rate_limiter.wait()
+        self.rate_limiter.acquire()
 
         # Make request and record metrics
         start_time = time.time()
@@ -115,7 +115,7 @@ class HerpBaseClient:
             duration_ms = (time.time() - start_time) * 1000
 
             # Update rate limiter from response headers
-            self.rate_limiter.update_from_response_headers(response.headers)
+            self.rate_limiter.update_from_headers(response.headers)
 
             # Log the request
             logger.debug(
@@ -123,17 +123,14 @@ class HerpBaseClient:
             )
 
             # Record metrics (always, regardless of success/failure)
-            self.metrics.record_api_call(
-                method=method,
-                endpoint=endpoint,
-                status_code=response.status_code,
-                duration_ms=duration_ms,
-                error=(
-                    None
-                    if response.status_code < 400
-                    else f"HTTP {response.status_code}"
-                ),
-                labels={"api": "herp"},
+            self.metrics.increment(
+                "herp.api.requests",
+                tags={"method": method, "endpoint": endpoint, "status": str(response.status_code)}
+            )
+            self.metrics.timing(
+                "herp.api.duration",
+                duration_ms,
+                tags={"method": method, "endpoint": endpoint}
             )
 
             # Handle errors
@@ -154,13 +151,14 @@ class HerpBaseClient:
         except Exception as e:
             # Record unexpected errors
             duration_ms = (time.time() - start_time) * 1000
-            self.metrics.record_api_call(
-                method=method,
-                endpoint=endpoint,
-                status_code=0,
-                duration_ms=duration_ms,
-                error=str(e),
-                labels={"api": "herp", "error_type": type(e).__name__},
+            self.metrics.increment(
+                "herp.api.errors",
+                tags={"method": method, "endpoint": endpoint, "error_type": type(e).__name__}
+            )
+            self.metrics.timing(
+                "herp.api.duration",
+                duration_ms,
+                tags={"method": method, "endpoint": endpoint}
             )
             raise
 

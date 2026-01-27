@@ -1,0 +1,62 @@
+interactions:
+- request:
+    body: null
+    headers:
+      Accept:
+      - '*/*'
+      Accept-Encoding:
+      - gzip, deflate, zstd
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      User-Agent:
+      - python-requests/2.32.5
+    method: GET
+    uri: https://public-api.herp.cloud/hire/v1/candidacies/cand_nonexistent_12345
+  response:
+    body:
+      string: "{\"message\":\"\u5FDC\u52DF\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\"}"
+    headers:
+      Connection:
+      - keep-alive
+      Content-Type:
+      - application/json
+      Date:
+      - Tue, 27 Jan 2026 05:15:03 GMT
+      Transfer-Encoding:
+      - chunked
+      content-encoding:
+      - gzip
+      server:
+      - istio-envoy
+      strict-transport-security:
+      - max-age=31536000; includeSubDomains; preload
+      vary:
+      - Accept-Encoding
+      x-content-type-options:
+      - nosniff
+      x-envoy-upstream-service-time:
+      - '43'
+      x-frame-options:
+      - SAMEORIGIN
+      x-puffin-request-rate:
+      - '0.347'
+      x-puffin-usage-count:
+      - '4'
+      x-puffin-usage-duration:
+      - '361274041'
+      x-puffin-usage-resets-at:
+      - 2026-01-27 05:16:03 UTC
+      x-remaining-request:
+      - '96'
+      x-request-id:
+      - 129b2c4b-0469-9a2d-bf64-87217c0d12cc
+      x-reset-at:
+      - '2026-01-27T14:16:03+09:00'
+      x-xss-protection:
+      - 1; mode=block
+    status:
+      code: 404
+      message: Not Found
+version: 1
