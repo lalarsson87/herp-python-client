@@ -16,7 +16,7 @@ interactions:
     uri: https://public-api.herp.cloud/hire/v1/candidacies/cand_nonexistent_12345
   response:
     body:
-      string: "{\"message\":\"\u5FDC\u52DF\u304C\u898B\u3064\u304B\u308A\u307E\u305B\u3093\"}"
+      string: '{"message": "応募が見つかりません"}'
     headers:
       Connection:
       - keep-alive
