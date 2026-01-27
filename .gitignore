@@ -80,14 +80,10 @@ secrets/
 credentials/
 
 # Docker
+.dockerignore
 docker-compose.override.yml
-
-# Dev Container
-.devcontainer/.bash_history
 
 # Project specific
 .scrum/
 htmlcov/
 .coverage
-docs/build/
-docs/source/_build/

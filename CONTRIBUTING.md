@@ -1,253 +1,354 @@
-# Contributing to HERP Python Client
+# Contributing to HERP-Notion Integration
 
-Thank you for your interest in contributing to the HERP Python Client!
+Thank you for your interest in contributing to the HERP-Notion Integration project! This document provides guidelines for contributing to the codebase.
 
-## Development Setup
+## Table of Contents
 
-### 1. Clone the Repository
+- [Code of Conduct](#code-of-conduct)
+- [Getting Started](#getting-started)
+- [Development Workflow](#development-workflow)
+- [Coding Standards](#coding-standards)
+- [Testing Guidelines](#testing-guidelines)
+- [Commit Guidelines](#commit-guidelines)
+- [Pull Request Process](#pull-request-process)
 
+## Code of Conduct
+
+This project follows Belong Inc's core values:
+- **Be Honest (誠実であれ)**: Transparent communication and integrity
+- **Be United (一丸となれ)**: Collaborative problem-solving
+- **Make a Contribution (貢献しよう)**: Go beyond assigned responsibilities
+
+## Getting Started
+
+### Prerequisites
+
+- Python 3.10 or higher
+- Git
+- HERP API credentials
+- Notion API credentials
+
+### Setup
+
+1. Clone the repository:
 ```bash
-git clone https://github.com/lalarsson87/herp-python-client.git
-cd herp-python-client
+git clone https://github.com/belong-inc/herp-notion-integration.git
+cd herp-notion-integration/development/herp
 ```
 
-### 2. Create Virtual Environment
-
+2. Create a virtual environment:
 ```bash
-python3 -m venv .venv
+python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
 ```
 
-### 3. Install Dependencies
-
+3. Install dependencies:
 ```bash
-# Install package in development mode
-pip install -e ".[dev]"
-
-# Or install dependencies separately
-pip install -r requirements.txt
 pip install -r requirements-dev.txt
 ```
 
-### 4. Set Up Pre-commit Hooks
-
-Pre-commit hooks automatically run code quality checks before each commit:
-
+4. Set up environment variables:
 ```bash
-pip install pre-commit
+cp .env.example .env
+# Edit .env with your API keys
+```
+
+5. Install pre-commit hooks:
+```bash
 pre-commit install
-
-# Run hooks manually on all files
-pre-commit run --all-files
 ```
 
-The pre-commit hooks include:
-- **black**: Code formatting
-- **isort**: Import sorting
-- **flake8**: Linting
-- **mypy**: Static type checking
-- **bandit**: Security checks
-- **pydocstyle**: Docstring style checks
-- **Standard hooks**: Trailing whitespace, YAML/JSON validation, etc.
+## Development Workflow
 
-### 5. Run Tests
+### Domain-Driven Design
 
-```bash
-# Run all tests
-pytest
+This project follows domain-driven design (DDD) principles:
 
-# Run with coverage
-pytest --cov=src --cov-report=html
-
-# Run specific test file
-pytest tests/unit/core/herp/test_builders.py
-
-# Run with verbose output
-pytest -v
+```
+src/
+├── domains/          # Business domains
+│   ├── candidates/   # Candidate management
+│   ├── sync/         # Synchronization logic
+│   ├── notion/       # Notion-specific operations
+│   └── user_activity/# User activity tracking
+└── core/             # Shared infrastructure
+    ├── herp/         # HERP API client
+    ├── notion/       # Notion API client
+    ├── cache/        # Caching layer
+    ├── errors/       # Error handling
+    └── utils/        # Utilities
 ```
 
-### 6. Type Checking
+### Where to Add Code
 
-```bash
-# Run mypy on source code
-mypy src/
+- **Business logic**: Add to appropriate domain (e.g., `domains/candidates/`)
+- **API clients**: Add to `core/herp/` or `core/notion/`
+- **Utilities**: Add to `core/utils/`
+- **Scripts**: Add to `scripts/` for executable entry points
 
-# Check specific module
-mypy src/core/herp/client.py
-```
+## Coding Standards
 
-## Code Style Guidelines
+### Design Principles (from HitoHana Guideline)
+
+1. **Searchable Naming**: Use grep-friendly names
+   ```python
+   # Good
+   def calculate_candidate_score(profile: CandidateProfile) -> float:
+       ...
+
+   # Bad (too generic)
+   def calc(data):
+       ...
+   ```
+
+2. **Transaction Management**: Never make external API calls within database transactions
+   ```python
+   # Good
+   response = herp_client.get_candidacy(id)  # API call outside transaction
+   with db.transaction():
+       candidate.update(response)
+
+   # Bad
+   with db.transaction():
+       response = herp_client.get_candidacy(id)  # DON'T DO THIS
+       candidate.update(response)
+   ```
+
+3. **REST API Design**: Follow OpenAPI specifications and REST principles
 
 ### Python Style
-- Follow PEP 8 guidelines
-- Line length: 100 characters (enforced by black)
-- Use type hints for function signatures
-- Write docstrings for all public functions/classes (Google style)
 
-### Example
+- **Formatting**: Black (line length: 88)
+- **Import sorting**: isort (profile: black)
+- **Linting**: flake8
+- **Type hints**: Use type hints for all public functions
+- **Docstrings**: Google-style docstrings
 
+Example:
 ```python
-from typing import Dict, Optional
+from typing import Optional, List
+from .models import Candidate
 
-def create_candidacy(
-    name: str,
-    requisition_id: str,
-    email: Optional[str] = None,
-) -> Dict[str, Any]:
-    """Create a new candidacy in HERP.
+def analyze_candidate_profile(
+    candidate_id: str,
+    include_timeline: bool = True
+) -> Optional[CandidateAnalysis]:
+    """
+    Analyze candidate profile using AI.
 
     Args:
-        name: Candidate's full name
-        requisition_id: ID of the job requisition
-        email: Candidate's email address (optional)
+        candidate_id: HERP candidacy ID
+        include_timeline: Whether to include timeline analysis
 
     Returns:
-        Dictionary containing the created candidacy data
+        Candidate analysis result, or None if candidate not found
 
     Raises:
-        HerpValidationError: If required fields are missing
-        HerpAuthenticationError: If API key is invalid
+        HerpAPIError: If HERP API request fails
+        ValidationError: If candidate data is invalid
     """
-    # Implementation here
-    pass
+    ...
+```
+
+### Logging
+
+Use structured logging (not print statements):
+
+```python
+from src.core.utils.logging import get_logger
+
+logger = get_logger(__name__)
+
+# Good
+logger.info("syncing_candidate", candidate_id=candidate_id, status="in_progress")
+
+# Bad
+print(f"Syncing candidate {candidate_id}")
+```
+
+### Error Handling
+
+Use the error classification module:
+
+```python
+from src.core.errors import classify_error, smart_retry
+
+@smart_retry(max_attempts=3)
+def fetch_candidate(candidate_id: str):
+    try:
+        return herp_client.get_candidacy(candidate_id)
+    except HerpAPIError as e:
+        error_info = classify_error(e)
+        if error_info.category == ErrorCategory.PERMANENT:
+            raise  # Don't retry permanent errors
+        raise  # Retry transient errors
 ```
 
 ## Testing Guidelines
 
-### Test Structure
-- Use unittest or pytest framework
-- One test file per source module
-- Clear, descriptive test names
-- Group related tests in classes
-
 ### Test Coverage
+
 - Aim for >80% code coverage
-- Test both success and failure cases
-- Include edge cases and boundary conditions
-- Mock external API calls
+- 100% coverage for critical paths
+- All new features must include tests
 
-### Example Test
+### Test Structure
 
-```python
-import unittest
-from src.core.herp.builders import CandidacyBuilder
-
-
-class TestCandidacyBuilder(unittest.TestCase):
-    """Test cases for CandidacyBuilder"""
-
-    def test_basic_build(self):
-        """Test building candidacy with required fields"""
-        result = (
-            CandidacyBuilder()
-            .with_name("Jane Doe")
-            .for_requisition("req_001")
-            .build()
-        )
-
-        self.assertEqual(result["name"], "Jane Doe")
-        self.assertEqual(result["requisition_id"], "req_001")
-
-    def test_missing_name_raises_error(self):
-        """Test that missing name raises ValueError"""
-        with self.assertRaises(ValueError) as cm:
-            CandidacyBuilder().for_requisition("req_001").build()
-
-        self.assertIn("name", str(cm.exception).lower())
+```
+tests/
+├── unit/           # Unit tests (isolated, mocked dependencies)
+├── integration/    # Integration tests (mocked APIs)
+├── e2e/            # End-to-end tests (real workflows)
+└── fixtures/       # Test data and mocks
 ```
 
-## Commit Message Guidelines
+### Writing Tests
 
-Follow conventional commit format:
+```python
+import pytest
+from unittest.mock import Mock, patch
+from src.domains.sync.services.full_sync import FullSyncService
+
+def test_sync_candidate_success():
+    """Test successful candidate synchronization"""
+    # Arrange
+    herp_client = Mock()
+    notion_client = Mock()
+    service = FullSyncService(herp_client, notion_client)
+
+    # Act
+    result = service.sync_candidate("test-id")
+
+    # Assert
+    assert result.success is True
+    herp_client.get_candidacy.assert_called_once_with("test-id")
+```
+
+### Running Tests
+
+```bash
+# All tests
+pytest tests/
+
+# Specific test suite
+pytest tests/unit/
+
+# With coverage
+pytest tests/ --cov=src --cov-report=html
+
+# Specific test file
+pytest tests/unit/core/cache/test_cache_manager.py
+
+# Specific test
+pytest tests/unit/core/cache/test_cache_manager.py::test_cache_hit
+```
+
+## Commit Guidelines
+
+### Commit Message Format
+
+Follow conventional commits:
 
 ```
 <type>(<scope>): <subject>
 
 <body>
 
-<footer>
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 ### Types
-- **feat**: New feature
-- **fix**: Bug fix
-- **docs**: Documentation changes
-- **style**: Code formatting (no functional changes)
-- **refactor**: Code refactoring
-- **test**: Adding or updating tests
-- **chore**: Maintenance tasks
 
-### Example
+- `feat`: New feature
+- `fix`: Bug fix
+- `test`: Adding or updating tests
+- `refactor`: Code refactoring
+- `docs`: Documentation changes
+- `style`: Code style changes (formatting)
+- `perf`: Performance improvements
+- `chore`: Maintenance tasks
+
+### Examples
 
 ```
-feat(builders): add TimelineCommentBuilder for creating comments
+feat(cache): add TTL-based cache manager
 
-Add fluent builder interface for creating timeline comments with
-support for both plain text and markdown content.
+Implement memory-based L1 caching layer to reduce API calls.
+Includes cache statistics and metrics tracking.
 
-Closes #42
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
+```
+
+```
+fix(sync): resolve race condition in batch sync
+
+Fix concurrent update issue when syncing multiple candidates
+simultaneously. Add proper locking mechanism.
+
+Fixes #123
+
+Co-Authored-By: Claude Sonnet 4.5 <noreply@anthropic.com>
 ```
 
 ## Pull Request Process
 
-1. **Create a feature branch**
+### Before Submitting
+
+1. **Run pre-commit hooks**:
    ```bash
-   git checkout -b feature/your-feature-name
+   pre-commit run --all-files
    ```
 
-2. **Make your changes**
-   - Write code following style guidelines
-   - Add/update tests
-   - Update documentation
-
-3. **Run quality checks**
+2. **Run tests**:
    ```bash
-   # Format code
-   black src/ tests/
-   isort src/ tests/
-
-   # Run linting
-   flake8 src/ tests/
-
-   # Run tests
-   pytest --cov=src
+   pytest tests/ --cov=src
    ```
 
-4. **Commit your changes**
-   ```bash
-   git add .
-   git commit -m "feat: your commit message"
-   ```
+3. **Update documentation**:
+   - Update README.md if needed
+   - Update CHANGELOG.md
+   - Add docstrings to new functions
 
-5. **Push to your fork**
-   ```bash
-   git push origin feature/your-feature-name
-   ```
+4. **Check CI pipeline**: Ensure all checks pass locally
 
-6. **Create Pull Request**
-   - Provide clear description of changes
-   - Reference related issues
-   - Ensure CI passes
+### PR Template
 
-## CI/CD Pipeline
+```markdown
+## Description
+Brief description of changes
 
-The repository uses GitHub Actions for continuous integration:
+## Type of Change
+- [ ] Bug fix
+- [ ] New feature
+- [ ] Breaking change
+- [ ] Documentation update
 
-1. **Lint**: Code formatting and linting checks
-2. **Test**: Run test suite with coverage
-3. **Type Check**: MyPy static type checking
-4. **Security**: Bandit security scanning
-5. **Docs**: Build documentation
-6. **Build**: Package building
+## Testing
+- [ ] Unit tests added/updated
+- [ ] Integration tests added/updated
+- [ ] All tests passing locally
 
-All checks must pass before merging.
+## Checklist
+- [ ] Code follows style guidelines
+- [ ] Self-review completed
+- [ ] Comments added for complex logic
+- [ ] Documentation updated
+- [ ] No new warnings generated
+- [ ] Tests provide adequate coverage
+```
 
-## Questions or Issues?
+### Review Process
 
-- **Bug Reports**: [GitHub Issues](https://github.com/lalarsson87/herp-python-client/issues)
-- **Feature Requests**: [GitHub Discussions](https://github.com/lalarsson87/herp-python-client/discussions)
-- **Email**: engineering@belong.co.jp
+1. Submit PR with clear description
+2. Address reviewer feedback
+3. Ensure CI pipeline passes
+4. Obtain approval from maintainer
+5. Squash and merge
 
-## License
+## Questions?
 
-By contributing, you agree that your contributions will be licensed under the MIT License.
+- **Technical questions**: Open a GitHub issue
+- **Security concerns**: See SECURITY.md
+- **General questions**: Contact the engineering team
+
+Thank you for contributing! 🎉

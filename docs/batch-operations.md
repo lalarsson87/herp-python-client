@@ -601,4 +601,4 @@ Based on HERP API rate limits (100 requests/minute):
 
 ## API Reference
 
-See `src/core/herp/batch_client.py` for full API documentation.
+See [batch_client.py](../src/core/herp/batch_client.py) for full API documentation.

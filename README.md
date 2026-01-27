@@ -1,323 +1,177 @@
-# HERP Python Client
+# HERP-Notion Integration Project
 
-[![CI](https://github.com/lalarsson87/herp-python-client/workflows/CI/badge.svg)](https://github.com/lalarsson87/herp-python-client/actions)
-[![codecov](https://codecov.io/gh/lalarsson87/herp-python-client/branch/main/graph/badge.svg)](https://codecov.io/gh/lalarsson87/herp-python-client)
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+Automated synchronization and workflow tools for HERP Hire ATS and Notion databases.
 
-Python client library and Notion integration for the HERP Hire API.
+## Overview
 
-## Features
+This project automates manual work for recruiters by synchronizing candidate data between:
+- **HERP Hire**: Applicant Tracking System (ATS) API
+- **Notion**: Knowledge base and extended candidate tracking
 
-- 🚀 **Type-safe API client** with TypedDict response types
-- ⚡ **Async/await support** for non-blocking operations (10-20x faster)
-- 📦 **Batch operations** for high-performance bulk operations
-- 🔍 **Query DSL** for complex searches with 14 operators
-- 📊 **Event sourcing** for complete audit trails
-- 🔗 **Webhook integration** with HMAC-SHA256 verification
-- 🎯 **Builder patterns** for validated API construction
-- 🔄 **Reusable mixins** for common patterns
-- 📝 **Comprehensive documentation** with 1,700+ lines of guides
+**Goal**: Reduce recruiter time spent on manual data entry from **≥30% to ≤15%** of their workday.
 
-## Known Limitations
-
-### API Response Inconsistencies
-
-The HERP API has some quirks that affect client behavior:
-
-**Field Sets Vary by Endpoint:**
-- `GET /v1/candidacies` (LIST) returns 20 fields including `email`, `telephoneNumber`, `age`, `company`, `education`, `career`, `note`, `updatedAt`
-- `GET /v1/candidacies/{id}` (SINGLE) returns only 12 fields including `agentEmailAddress` and `links`, but missing profile fields
-- **Impact**: TypedDict schemas mark most fields as `NotRequired` to handle both response types
-
-**Pagination Parameters Ignored:**
-- The `limit` parameter is documented but ignored by the API
-- API returns all results (typically ~100 records) regardless of specified limit
-- **Workaround**: Use client-side filtering or pagination via `iter()` method
-
-**Missing Features:**
-- No `status` filter parameter in `candidacies.list()`
-- `ContactsAPI.get()` method not implemented (list-only endpoint)
-- Contact response doesn't include `candidacy_id` field (must track separately)
-
-**Query DSL Documentation:**
-- Example code in `query_dsl.py` uses snake_case field names (`requisition_id`, `created_at`)
-- Actual API responses use camelCase (`requisitionId`, `appliedAt`)
-- **Note**: Query DSL is not actively integrated with live API yet
-
-### Field Naming Convention
-
-**API Responses use camelCase:**
-```python
-# Correct field names
-candidacy["requisitionId"]  # ✅
-candidacy["appliedAt"]      # ✅
-contact["createdAt"]        # ✅
-
-# Wrong field names (will fail)
-candidacy["requisition_id"] # ❌
-candidacy["applied_at"]     # ❌
-contact["created_at"]       # ❌
-```
-
-**Schema Documentation:** See `src/core/herp/schemas.py` for complete field definitions with actual API field names.
-
-## Installation
-
-### Option 1: Isolated Dev Container (Recommended ⭐)
-
-Complete isolated development environment with all tools pre-configured:
-
-```bash
-# 1. Install Docker Desktop and VS Code
-# 2. Install "Dev Containers" extension in VS Code
-# 3. Open project in VS Code
-code herp-client.code-workspace
-
-# 4. Reopen in container
-# Press F1 → "Dev Containers: Reopen in Container"
-```
-
-✅ Auto-installs all dependencies
-✅ Pre-configured linting and formatting
-✅ Includes debugging support
-✅ Consistent across all machines
-
-**See:** `docs/WORKSPACE_SETUP.md` for complete setup guide
-
-### Option 2: Local Installation
-
-```bash
-# Create virtual environment
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip install -e ".[dev]"
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-## Quick Start
-
-### Synchronous Client
-
-```python
-from src.core.herp import HerpClient, CandidacyBuilder
-from src.core.utils.config import load_herp_config
-
-# Initialize client
-config = load_herp_config()
-client = HerpClient(config)
-
-# Create candidacy with builder
-candidacy = (
-    CandidacyBuilder()
-    .with_name("Jane Doe")
-    .with_email("jane@example.com")
-    .for_requisition("req_001")
-    .build()
-)
-
-result = client.candidacies.create(candidacy)
-```
-
-### Async Client (10-20x Faster)
-
-```python
-import asyncio
-from src.core.herp import AsyncHerpClient
-
-async def main():
-    async with AsyncHerpClient(config) as client:
-        # Fetch 100 candidacies concurrently
-        candidacies = await client.candidacies.list(limit=100)
-
-        # Process in parallel
-        tasks = [client.candidacies.get(c["id"]) for c in candidacies]
-        results = await asyncio.gather(*tasks)
-
-asyncio.run(main())
-```
-
-### Query DSL
-
-```python
-from src.core.herp import CandidacyQuery
-
-# Complex nested query
-query = (
-    CandidacyQuery()
-    .or_(
-        CandidacyQuery().by_email("jane@example.com"),
-        CandidacyQuery().by_email("john@example.com")
-    )
-    .active_only()
-    .created_between("2026-01-01", "2026-12-31")
-    .not_(CandidacyQuery().with_tags(["rejected"]))
-)
-
-results = client.candidacies.search(query)
-```
-
-### Event Sourcing
-
-```python
-from src.core.herp import EventSourcedCandidacy, InMemoryEventStore
-
-# Create event store
-store = InMemoryEventStore()
-
-# Create candidacy with event sourcing
-candidacy = EventSourcedCandidacy.create(
-    candidacy_id="cand_123",
-    name="Jane Doe",
-    email="jane@example.com",
-    event_store=store
-)
-
-# Make changes (recorded as events)
-candidacy.change_step("interview")
-candidacy.add_contact("contact_123", "phone_screen")
-candidacy.commit()
-
-# View complete history
-history = candidacy.get_event_history()
-
-# Temporal query (state at any point in time)
-state_yesterday = candidacy.get_state_at(datetime(2026, 1, 25))
-```
-
-### Webhooks
-
-```python
-from src.core.herp.webhooks import WebhookVerifier, WebhookRouter
-
-# Verify webhook signature
-verifier = WebhookVerifier(webhook_secret="your_secret")
-verifier.verify(payload, signature, timestamp)
-
-# Route events with retry logic
-router = WebhookRouter(enable_dlq=True)
-
-router.add_route(
-    event_type="candidacy.created",
-    handler=handle_created,
-    max_retries=5,
-    filter=lambda d: d.get("step") == "offer"
-)
-
-router.route(payload)
-```
-
-## Documentation
-
-### Core Guides
-
-- [Architecture Guide](docs/herp-client-architecture.md) - Modular architecture overview
-- [Async Operations](docs/async-operations.md) - Complete async/await guide (10-20x performance)
-- [Builder Patterns](docs/builder-patterns.md) - Type-safe API construction
-- [Batch Operations](docs/batch-operations.md) - High-performance bulk operations
-- [Mixins Guide](docs/mixins-guide.md) - Reusable pattern library
-
-### Advanced Features
-
-- [Query DSL](docs/query-dsl-guide.md) - Complex searches with 14 operators
-- [Event Sourcing](docs/event-sourcing-guide.md) - Complete audit trails and temporal queries
-- [Webhooks](docs/webhooks-guide.md) - Real-time webhook integration
-- [Environment Variables](docs/environment-variables.md) - Configuration reference
-
-### Implementation Progress
-
-- [Phase 5 Summary](docs/phase-5-partial-summary.md) - Advanced features completion
-
-## Architecture
-
-### Modular Design
+## Project Structure
 
 ```
-src/core/herp/
-├── Base Layer
-│   ├── base_client.py         # Sync HTTP client
-│   ├── async_base_client.py   # Async HTTP client (httpx)
-│   └── types.py               # TypedDict definitions
+development/herp/
+├── scripts/                    # Executable entry points
+│   ├── sync-herp-notion-*.py  # Sync scripts (full, enhanced, with-reports)
+│   ├── analyze-candidate-*.py # Candidate analysis tools
+│   ├── find-lars-*.py         # User activity tracking
+│   └── test-herp-api.py       # API testing utilities
 │
-├── API Modules (focused, avg 138 lines)
-│   ├── candidates.py          # Candidacy operations
-│   ├── contacts.py            # Contact operations
-│   ├── files.py               # File operations
-│   ├── evaluations.py         # Evaluation operations
-│   ├── assignments.py         # Assignment operations
-│   ├── timeline.py            # Timeline operations
-│   └── master_data.py         # Master data + caching
-│
-├── Patterns & Helpers
-│   ├── builders.py            # Fluent builders
-│   ├── mixins.py              # Reusable patterns
-│   ├── query_dsl.py           # Query builder
-│   └── pagination.py          # Pagination support
-│
-├── Advanced Features
-│   ├── events/                # Event sourcing
-│   │   ├── events.py          # 11 immutable event types
-│   │   ├── event_store.py     # Multiple storage backends
-│   │   ├── aggregate.py       # Event-sourced aggregate
-│   │   └── projections.py     # 4 projection types
+├── src/                        # Source code (domain-driven design)
+│   ├── domains/
+│   │   ├── candidates/        # Candidate management domain
+│   │   │   ├── analysis/      # Profile analysis, agent-based analysis
+│   │   │   ├── reviews/       # Review generation
+│   │   │   ├── evaluation/    # Candidate evaluation logic
+│   │   │   └── data_quality/  # Deduplication, validation
+│   │   ├── sync/              # HERP-Notion synchronization domain
+│   │   │   ├── services/      # Sync implementations (full, enhanced, reports, files)
+│   │   │   ├── mappers/       # Data mapping between HERP and Notion
+│   │   │   └── conflict_resolution/
+│   │   ├── notion/            # Notion-specific operations
+│   │   │   └── pages/         # Page population, wiping
+│   │   └── user_activity/     # User activity tracking and analysis
+│   │       ├── search/        # Activity search and filtering
+│   │       └── analysis/      # Comment collection, timeline investigation
 │   │
-│   └── webhooks/              # Webhook integration
-│       ├── verifier.py        # HMAC-SHA256 verification
-│       ├── handlers.py        # Event handlers
-│       └── router.py          # Routing with retry logic
+│   ├── core/                   # Shared infrastructure
+│   │   ├── herp/              # HERP API client library
+│   │   ├── notion/            # Notion API client library
+│   │   ├── utils/             # Utilities (logging, config, validation, retry)
+│   │   ├── types/             # Shared type definitions
+│   │   └── examples/          # Usage examples (logging_example.py)
+│   │
+│   └── cli/                    # CLI wrappers (future)
+│       └── entrypoints/
 │
-├── Batch & Async
-│   ├── batch_client.py        # Sync bulk operations
-│   ├── async_batch_client.py  # Async bulk operations
-│   └── async_*.py             # Async versions of all modules
-│
-└── Facade
-    └── client.py              # Main client (backward compatible)
+└── tests/                      # Test suite
+    ├── unit/                   # Unit tests
+    ├── integration/            # Integration tests (with mocks)
+    ├── e2e/                    # End-to-end tests
+    └── fixtures/               # Test data and mocks
 ```
 
-### Key Patterns
+## Key Scripts
 
-✅ **Type Safety**: Full TypedDict coverage for IDE autocomplete
-✅ **DRY Principle**: 90% reduction in duplication via mixins
-✅ **Async/Await**: Full async support with httpx
-✅ **Event Sourcing**: Immutable events with temporal queries
-✅ **Webhooks**: HMAC-SHA256 verification with retry logic
-✅ **Modular**: 65% reduction in main client size (917 → 322 lines)
+### Synchronization
 
-## Performance
+**`sync-herp-notion-full.py`**: Full bidirectional sync
+- Syncs all candidates from HERP to Notion
+- Updates core properties, contacts, evaluations, timeline
+- Downloads and links resume files
 
-### Sync vs Async Benchmarks
+**`sync-herp-notion-enhanced.py`**: Enhanced sync with advanced features
+- Incremental sync using `updatedSince` parameter
+- Conflict detection and resolution
+- Improved error handling
 
-| Operation | Sync | Async | Improvement |
-|-----------|------|-------|-------------|
-| Fetch 100 items | 60s | 6s | **10x faster** |
-| Fetch 1000 items | 600s | 60s | **10x faster** |
-| Create 100 items | 60s | 12s | **5x faster** |
-| Concurrent workers | 1 | 10-20 | **Configurable** |
+**`sync-herp-notion-with-reports.py`**: Sync with progress reporting
+- Real-time progress updates
+- Structured logging integration
+- Detailed sync reports
 
-### Caching
+**`sync-candidate-files.py`**: File-only synchronization
+- Downloads candidate files from HERP
+- Uploads to Notion and links to candidate pages
 
-- **Master data**: 80% reduction in API calls (5-minute TTL)
-- **Response caching**: Instant for cached requests
-- **Event replay**: Optimized with snapshots
+### Analysis
+
+**`analyze-candidate-profile.py`**: AI-powered candidate profile analysis
+- Extracts candidate data from HERP
+- Generates AI profile scores
+- Predicts engineering levels
+- Evaluates "Four Pillars" (People, Product, Process, Platform)
+
+**`analyze-candidates-with-agent.py`**: Agent-based analysis pipeline
+- Multi-step analysis workflow
+- Structured output generation
+
+**`analyze-candidates-orchestrator.py`**: Batch analysis orchestration
+- Processes multiple candidates
+- Parallel processing capabilities
+
+### User Activity
+
+**`find-lars-activity.py`**: Search for specific user activity in HERP
+- Searches candidacies for user contributions
+- Tracks timeline comments, evaluations, assignments
+
+**`collect-lars-comments.py`**: Collect comments from specific user
+- Aggregates all comments by user
+- Exports to JSON
+
+**`investigate-timeline-authors.py`**: Analyze timeline comment patterns
+- Identifies comment authors
+- Tracks contribution patterns
+
+### Utilities
+
+**`test-herp-api.py`**: Test HERP API connectivity
+- Validates API credentials
+- Tests endpoint availability
+- Debugging tool
+
+## Core Libraries
+
+### HERP Client (`src/core/herp/`)
+
+Python client for HERP Hire API:
+- Authentication and request handling
+- Rate limiting (100 req/min)
+- Retry logic with exponential backoff
+- Structured error handling
+
+**Key Endpoints**:
+- Candidacies (list, get, create, update, terminate)
+- Contacts (interviews, scheduling)
+- Timeline comments
+- Files (upload, download)
+- Evaluations
+- Assignments
+
+### Notion Client (`src/core/notion/`)
+
+Python client for Notion API:
+- Page creation and updates
+- Database queries
+- Block manipulation
+- Rate limiting (3 req/sec)
+
+### Logging (`src/core/utils/logging_config.py`)
+
+Structured logging with `structlog`:
+- JSON format for production
+- Console format for development
+- Context binding for automatic field inclusion
+- Integration with all scripts
+
+## Configuration
+
+**Environment Variables** (`.env`):
+```bash
+# HERP API
+HERP_API_KEY=your-herp-api-key
+HERP_API_BASE_URL=https://public-api.herp.cloud/hire/public
+
+# Notion API
+NOTION_API_KEY=your-notion-api-key
+NOTION_CANDIDATES_DB_ID=your-database-id
+```
+
+**Dependencies**:
+- `requirements.txt`: Production dependencies
+- `requirements-dev.txt`: Development and testing dependencies
 
 ## Development
 
 ### Setup
 
 ```bash
-# Clone repository
-git clone https://github.com/lalarsson87/herp-python-client.git
-cd herp-python-client
-
 # Install dependencies
-pip install -e ".[dev]"
+pip install -r requirements-dev.txt
 
 # Configure environment
 cp .env.example .env
@@ -334,189 +188,116 @@ pre-commit install
 pytest tests/
 
 # Run with coverage
-pytest tests/ --cov=src --cov-report=html
+pytest tests/ --cov=development/herp/src --cov-report=html
 
 # Run specific test suite
 pytest tests/unit/
 pytest tests/integration/
+pytest tests/e2e/
 ```
 
 ### Code Quality
 
 ```bash
 # Format code
-black src/ tests/
-isort src/ tests/
+black development/herp/src/ development/herp/tests/ development/herp/scripts/
+isort development/herp/src/ development/herp/tests/ development/herp/scripts/
 
 # Lint
-flake8 src/ tests/ --max-line-length=100
+flake8 development/herp/src/ development/herp/tests/ development/herp/scripts/
 
 # Type check
-mypy src/
+mypy development/herp/src/
+
+# Security scan
+bandit -r development/herp/src/
 
 # Run pre-commit hooks
 pre-commit run --all-files
 ```
 
-### Pre-Push Workflow (REQUIRED)
-
-**⚠️ IMPORTANT: Always run pre-push checks before pushing code**
-
-```bash
-# Run comprehensive pre-push verification
-make pre-push
-
-# Or use the script directly
-bash scripts/pre-push-check.sh
-```
-
-This runs:
-- ✅ Code formatting check (black)
-- ✅ Import ordering check (isort)
-- ✅ Critical error check (flake8)
-- ✅ Type checking (mypy)
-- ✅ Full test suite
-- ✅ Multi-Python version simulation
-- ✅ Common issue detection
-
-**Optional**: Install automatic pre-push hook:
-```bash
-cp scripts/pre-push-hook.sh .git/hooks/pre-push
-chmod +x .git/hooks/pre-push
-```
-
-**See**: `docs/DEVELOPMENT_WORKFLOW.md` for complete workflow documentation
-
-### Documentation
-
-```bash
-# Check documentation
-python scripts/check_docs.py
-
-# Checks:
-# - Spelling errors
-# - Broken links
-# - Code block syntax
-# - Heading hierarchy
-# - Consistent formatting
-```
-
 ## CI/CD
 
-GitHub Actions pipeline validates:
+GitHub Actions pipeline (`.github/workflows/ci.yml`):
+- **Triggers**: Changes to `development/herp/**` only
+- **Jobs**:
+  1. Lint & Format Check (black, isort, flake8)
+  2. Type Check (mypy)
+  3. Security Scan (bandit, credential detection)
+  4. Unit Tests (pytest, coverage)
+  5. Integration Tests (mocked APIs)
+  6. E2E Tests (full pipeline)
+  7. Build Status
 
-- ✅ Code formatting (black, isort)
-- ✅ Linting (flake8, pylint)
-- ✅ Type checking (mypy)
-- ✅ Tests (pytest with coverage)
-- ✅ Documentation (spell check, link validation)
-- ✅ Package build (twine)
+**CI/CD does NOT trigger** on changes to:
+- `knowledge-base/` (documentation)
+- `.scrum/` (project management)
+- Other non-HERP code
 
-## Requirements
+## Metrics
 
-- **Python**: 3.10+ (requires pattern matching, TypedDict)
-- **Sync**: requests >= 2.31.0
-- **Async**: httpx >= 0.25.0
-- **Config**: python-dotenv >= 1.0.0
+**Outcome Metric**: Recruiter Time Saved on Manual Sync
+- **Target**: ≥30% time reduction
+- **Baseline**: To be measured via gemba walk (T2.2)
+- **Measurement**: Follow-up time study after automation deployment
 
-### Development Dependencies
+**Secondary Metrics**:
+- Automation coverage: >80% of updates automated
+- Sync accuracy: >95% success rate
+- Sync latency: <5 minutes
+- User adoption: >80% of recruiters using automation
+- Recruiter NPS: >40
 
-- pytest >= 7.4.0
-- pytest-cov >= 4.1.0
-- pytest-asyncio >= 0.21.0
-- mypy >= 1.5.0
-- black >= 23.7.0
-- isort >= 5.12.0
-- flake8 >= 6.1.0
+**See**: `.scrum/outcome-metrics.md` for detailed framework
+
+## Documentation
+
+**Specifications**: `knowledge-base/docs/specifications/`
+- Sync service specs
+- Candidate analysis specs
+- API documentation
+
+**Context**: `knowledge-base/contexts/`
+- `herp-notion-mapping.md`: Complete field mapping and data structures
+- `recruiting.md`: Recruiting workflows and HERP integration
+- `engineering-pr.md`: Technical guidelines and best practices
+
+**Guides**: `.scrum/`
+- `gemba-walk-guide.md`: User observation methodology
+- `recruiter-interview-guide.md`: Pain point discovery interviews
+
+## Lean Experiments
+
+**EXP-1**: Recruiter Time Study
+- **Hypothesis**: Recruiters spend ≥30% time on manual sync
+- **Status**: In progress (T2.2 gemba walk pending)
+- **Decision**: Persevere (≥30%) / Adapt (15-29%) / Pivot (<15%)
+
+**EXP-2**: Sustainable Velocity
+- **Hypothesis**: 15-point velocity cap maintains quality + morale
+- **Status**: In progress (Sprint 2)
+- **Measurement**: Team health survey, velocity analysis
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Add tests
-5. Update documentation
-6. Run pre-commit hooks
-7. Submit a pull request
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+1. Follow domain-driven design principles
+2. Use structured logging (not print statements)
+3. Write tests for all new code
+4. Update documentation
+5. Run pre-commit hooks before committing
+6. Ensure CI/CD pipeline passes
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) file for details.
+[Add license information]
 
-## Changelog
+## Contact
 
-### v0.1.0 (2026-01-19)
-
-**Phase 5: Advanced Features Complete** ✅
-
-- Query DSL with 14 operators and logical operations (AND/OR/NOT)
-- Event sourcing with 11 event types and 4 projections
-- Webhook integration with HMAC-SHA256 verification
-- Complete async/await support for all operations
-- Batch operations with configurable concurrency
-- Comprehensive documentation (1,700+ lines)
-
-**Phase 4: Async Support** ✅
-
-- AsyncHerpClient with httpx
-- Async versions of all API modules
-- AsyncBatchHerpClient for bulk operations
-- 10-20x performance improvement
-
-**Phase 3: Code Deduplication** ✅
-
-- Reusable mixin library
-- 90% reduction in duplication
-- CacheMixin for master data
-
-**Phase 2: Modern Python Patterns** ✅
-
-- TypedDict definitions for all responses
-- Builder patterns for API construction
-- Modular architecture (8 focused modules)
-- 65% reduction in main client size
-
-**Phase 1: Foundation** ✅
-
-- Centralized exception hierarchy
-- Configuration management
-- BatchHerpClient for bulk operations
-- Comprehensive testing
-
-## Roadmap
-
-### Planned Features
-
-- **GraphQL Support** (conditional on API availability)
-- **Database-backed event store** (PostgreSQL, SQLite)
-- **Connection pooling** for performance
-- **OpenTelemetry integration** for distributed tracing
-- **Redis caching layer** for multi-process caching
-
-### Performance Goals
-
-- **Response caching**: HTTP-level caching (ETags, Last-Modified)
-- **Connection pooling**: 20-30% improvement
-- **Load testing**: Establish performance baselines
-
-## Support
-
-- **Issues**: [GitHub Issues](https://github.com/lalarsson87/herp-python-client/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/lalarsson87/herp-python-client/discussions)
-
-## Credits
-
-Developed with modern Python patterns (3.10+):
-- Pattern matching for error classification
-- TypedDict for type safety
-- httpx for async HTTP
-- Frozen dataclasses for immutable events
-- HMAC-SHA256 for webhook security
+Product Manager: [Contact info]
+Team: Engineering HR
 
 ---
 
-**Status**: Active development
 **Last Updated**: January 2026
-**Maintainer**: Lars Larsson
+**Current Sprint**: Sprint 2 - Validate & Stabilize
+**Project Status**: Active development

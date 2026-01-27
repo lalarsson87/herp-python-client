@@ -3,30 +3,16 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "herp-python-client"
+name = "herp-notion-integration"
 version = "0.3.0"
-description = "Production-ready Python client for HERP Hire API with caching, rate limiting, circuit breakers, and Notion integration"
+description = "Automated synchronization and workflow tools for HERP Hire ATS and Notion databases"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Belong Inc.", email = "engineering@belong.co.jp"},
 ]
-maintainers = [
-    {name = "Lars Larsson", email = "lars@dreamly.ai"},
-]
-keywords = [
-    "herp",
-    "notion",
-    "ats",
-    "recruiting",
-    "automation",
-    "synchronization",
-    "api-client",
-    "rate-limiting",
-    "circuit-breaker",
-    "caching",
-]
+keywords = ["herp", "notion", "ats", "recruiting", "automation", "synchronization"]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -37,8 +23,6 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Office/Business",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Topic :: Internet :: WWW/HTTP",
-    "Typing :: Typed",
 ]
 
 dependencies = [
@@ -54,8 +38,6 @@ dev = [
     "pytest-cov>=4.1.0",
     "pytest-asyncio>=0.21.0",
     "pytest-timeout>=2.2.0",
-    "pytest-vcr>=1.0.2",
-    "vcrpy>=5.1.0",
     "black>=24.1.1",
     "isort>=5.13.2",
     "flake8>=7.0.0",
@@ -66,23 +48,15 @@ dev = [
     "types-python-dateutil>=2.8.19",
 ]
 
-docs = [
-    "sphinx>=7.2.0",
-    "sphinx-rtd-theme>=2.0.0",
-    "sphinx-autodoc-typehints>=1.25.0",
-    "myst-parser>=2.0.0",
-]
-
 [project.urls]
 Homepage = "https://belong.co.jp"
-Documentation = "https://github.com/lalarsson87/herp-python-client#readme"
-Repository = "https://github.com/lalarsson87/herp-python-client"
-"Bug Tracker" = "https://github.com/lalarsson87/herp-python-client/issues"
-Changelog = "https://github.com/lalarsson87/herp-python-client/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/belong-inc/herp-notion-integration#readme"
+Repository = "https://github.com/belong-inc/herp-notion-integration"
+"Bug Tracker" = "https://github.com/belong-inc/herp-notion-integration/issues"
+Changelog = "https://github.com/belong-inc/herp-notion-integration/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
-where = ["."]
-include = ["src*"]
+where = ["src"]
 
 [tool.black]
 line-length = 88
@@ -143,9 +117,10 @@ addopts = [
 ]
 markers = [
     "unit: Unit tests (fast, isolated)",
-    "integration: Integration tests (VCR-based, recorded API interactions)",
+    "integration: Integration tests (mocked external services)",
     "e2e: End-to-end tests (full workflows)",
     "slow: Slow running tests",
+    "vcr: Tests using VCR cassettes for API mocking",
 ]
 filterwarnings = [
     "error",

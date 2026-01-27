@@ -1,78 +1,57 @@
-# Git
-.git
-.gitignore
-.gitattributes
-.github
-
 # Python
-__pycache__
+__pycache__/
 *.py[cod]
 *$py.class
 *.so
 .Python
-build/
-develop-eggs/
-dist/
-downloads/
-eggs/
-.eggs/
-lib/
-lib64/
-parts/
-sdist/
-var/
-wheels/
-*.egg-info/
-.installed.cfg
-*.egg
-MANIFEST
-
-# Virtual environments
 venv/
-.venv/
 ENV/
 env/
+.venv
 
 # Testing
 .pytest_cache/
 .coverage
+coverage.xml
 htmlcov/
 .tox/
-.hypothesis/
+*.cover
 
-# Type checking
-.mypy_cache/
-.dmypy.json
-dmypy.json
+# Data and temporary files
+data/*
+!data/README.md
+*.pdf
+*.json.backup
+*.log
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
 *~
+
+# OS
 .DS_Store
+Thumbs.db
 
-# Documentation
-docs/_build/
-docs/.doctrees/
+# Git
+.git/
+.gitignore
 
-# Environment
-.env
-.env.local
-.env.*.local
-
-# Logs
-*.log
-
-# Development
-.devcontainer/.bash_history
-.pre-commit-config.yaml
+# Documentation (not needed in container)
+docs/
+.scrum/
+examples/
 
 # CI/CD
 .github/
 
-# Other
-*.bak
-*.tmp
-.cache/
+# Environment files (use docker-compose env vars instead)
+.env
+.env.local
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
