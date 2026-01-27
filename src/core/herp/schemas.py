@@ -4,6 +4,9 @@ Schema definitions for HERP API responses
 Complete TypedDict schemas for all HERP Hire API endpoints.
 Provides static type checking and IDE autocomplete for API responses.
 
+**IMPORTANT**: These schemas match the ACTUAL HERP API responses which use
+camelCase field names (e.g., `requisitionId`, not `requisition_id`).
+
 Usage:
     from src.core.herp.schemas import HerpCandidacyResponse
 
@@ -19,6 +22,78 @@ from typing import Any, Dict, List, Literal, NotRequired, TypedDict
 
 
 # ============================================================================
+# Nested Channel Schemas
+# ============================================================================
+
+
+class HerpAgentChannel(TypedDict):
+    """Agent channel information"""
+
+    id: str
+    company: str
+    name: str
+
+
+class HerpMediaChannel(TypedDict):
+    """Media channel information"""
+
+    mediaName: str
+    isScout: bool
+
+
+class HerpManualChannel(TypedDict):
+    """Manual channel information"""
+
+    kind: str
+    description: NotRequired[str]
+
+
+class HerpChannelAgent(TypedDict):
+    """Channel with agent type"""
+
+    type: Literal["agent"]
+    agent: HerpAgentChannel
+
+
+class HerpChannelMedia(TypedDict):
+    """Channel with media type"""
+
+    type: Literal["media"]
+    mediaName: str
+    isScout: bool
+
+
+class HerpChannelManual(TypedDict):
+    """Channel with manual type"""
+
+    type: Literal["manual"]
+    kind: str
+    description: NotRequired[str]
+
+
+class HerpChannelJobMiru(TypedDict):
+    """Channel with jobmiru type"""
+
+    type: Literal["jobmiru"]
+
+
+class HerpChannelCareerPage(TypedDict):
+    """Channel with career page type"""
+
+    type: Literal["careerPage"]
+
+
+# Union of all channel types
+HerpChannel = (
+    HerpChannelAgent
+    | HerpChannelMedia
+    | HerpChannelManual
+    | HerpChannelJobMiru
+    | HerpChannelCareerPage
+)
+
+
+# ============================================================================
 # Candidacy Schemas
 # ============================================================================
 
@@ -28,36 +103,44 @@ class HerpCandidacyResponse(TypedDict):
     Candidacy response schema
 
     Represents a single candidacy (job application) in HERP.
+
+    **Field Names**: Uses camelCase as returned by HERP API
+    (e.g., `requisitionId`, not `requisition_id`)
     """
 
+    # Required fields
     id: str
     name: str
-    email: NotRequired[str]
-    phone: NotRequired[str]
-    resume_url: NotRequired[str]
-    requisition_id: str
-    step: NotRequired[str]
     status: Literal["active", "hired", "terminated"]
-    created_at: str  # ISO 8601 datetime
-    updated_at: str  # ISO 8601 datetime
-    tags: NotRequired[List[str]]
-    custom_fields: NotRequired[Dict[str, Any]]
-    source: NotRequired[str]
-    referrer: NotRequired[str]
+    requisitionId: str
+    appliedAt: str  # ISO 8601 datetime
+    step: str
+    stepUpdatedAt: str  # ISO 8601 datetime
+    updatedAt: str  # ISO 8601 datetime
+    channel: HerpChannel
+    operators: List[str]
+    tags: List[str]
+
+    # Optional fields
+    email: NotRequired[str]
+    telephoneNumber: NotRequired[str]
+    age: NotRequired[str]
+    company: NotRequired[str]
+    education: NotRequired[str]
+    career: NotRequired[str]
+    note: NotRequired[str]
+    terminationReason: NotRequired[str]
+    terminatedAt: NotRequired[str]  # ISO 8601 datetime
 
 
 class HerpCandidaciesListResponse(TypedDict):
     """
     Candidacies list response schema
 
-    Paginated list of candidacies.
+    The HERP API returns candidacies in a top-level "candidacies" key.
     """
 
-    data: List[HerpCandidacyResponse]
-    total: NotRequired[int]
-    page: NotRequired[int]
-    per_page: NotRequired[int]
-    has_more: NotRequired[bool]
+    candidacies: List[HerpCandidacyResponse]
 
 
 # ============================================================================
@@ -65,47 +148,48 @@ class HerpCandidaciesListResponse(TypedDict):
 # ============================================================================
 
 
-class HerpContactResponse(TypedDict):
-    """
-    Contact (interview) response schema
-
-    Represents an interview or contact event.
-    """
+class HerpEvaluationItem(TypedDict):
+    """Evaluation item in a contact"""
 
     id: str
-    candidacy_id: str
-    type: Literal[
-        "phone_screen",
-        "technical_interview",
-        "casual_interview",
-        "behavioral_interview",
-        "final_interview",
-        "reference_check",
-        "other",
-    ]
+    status: Literal["unfilled", "completed", "pending"]
+    requesterId: str
+    evaluatorId: str
+
+
+class HerpContactResponse(TypedDict):
+    """
+    Contact (interview/assessment) response schema
+
+    Represents an interview, assessment, or contact event.
+
+    **Field Names**: Uses camelCase as returned by HERP API
+    """
+
+    # Required fields
+    id: str
+    type: str  # Type of contact (e.g., "書類", "カジュアル面談", etc.)
+    step: str  # Hiring step
+    createdAt: str  # ISO 8601 datetime
+    createdBy: str  # User ID
+
+    # Optional fields
+    evaluations: NotRequired[List[HerpEvaluationItem]]
+    requireAssessmentSchedule: NotRequired[bool]
     title: NotRequired[str]
-    scheduled_at: NotRequired[str]  # ISO 8601 datetime
-    duration_minutes: NotRequired[int]
+    scheduledAt: NotRequired[str]  # ISO 8601 datetime
     location: NotRequired[str]
-    interviewer_ids: NotRequired[List[str]]
     notes: NotRequired[str]
-    status: NotRequired[Literal["scheduled", "completed", "cancelled"]]
-    created_at: str
-    updated_at: str
 
 
 class HerpContactsListResponse(TypedDict):
     """
     Contacts list response schema
 
-    Paginated list of contacts.
+    The HERP API returns contacts in a top-level "contacts" key.
     """
 
-    data: List[HerpContactResponse]
-    total: NotRequired[int]
-    page: NotRequired[int]
-    per_page: NotRequired[int]
-    has_more: NotRequired[bool]
+    contacts: List[HerpContactResponse]
 
 
 # ============================================================================
@@ -114,111 +198,85 @@ class HerpContactsListResponse(TypedDict):
 
 
 class HerpEvaluationQuestionResponse(TypedDict):
-    """Individual evaluation question response"""
+    """Evaluation question schema"""
 
     id: str
-    question_text: NotRequired[str]
-    answer: NotRequired[str]
-    score: NotRequired[int]
-    max_score: NotRequired[int]
+    question: str
+    type: Literal["text", "rating", "boolean", "select"]
+    required: NotRequired[bool]
+    options: NotRequired[List[str]]
 
 
 class HerpEvaluationResponse(TypedDict):
-    """
-    Evaluation response schema
-
-    Represents an evaluation/assessment for a candidacy.
-    """
+    """Evaluation response schema"""
 
     id: str
-    candidacy_id: str
-    contact_id: NotRequired[str]
-    evaluator_id: str
-    questions: NotRequired[List[HerpEvaluationQuestionResponse]]
-    overall_score: NotRequired[int]
-    max_overall_score: NotRequired[int]
-    recommendation: NotRequired[
-        Literal["strong_yes", "yes", "maybe", "no", "strong_no"]
-    ]
+    contactId: str
+    evaluatorId: str
+    status: Literal["pending", "submitted", "completed"]
+    createdAt: str
+    updatedAt: str
+    questions: List[HerpEvaluationQuestionResponse]
+    answers: NotRequired[Dict[str, Any]]
+    overallRating: NotRequired[int]
+    recommendation: NotRequired[Literal["strong_yes", "yes", "no", "strong_no"]]
     notes: NotRequired[str]
-    submitted_at: NotRequired[str]  # ISO 8601 datetime
-    created_at: str
-    updated_at: str
+
+
+class HerpEvaluationsListResponse(TypedDict):
+    """Evaluations list response schema"""
+
+    evaluations: List[HerpEvaluationResponse]
 
 
 # ============================================================================
-# Timeline/Activity Schemas
+# Timeline Comment Schemas
 # ============================================================================
 
 
 class HerpTimelineCommentResponse(TypedDict):
-    """
-    Timeline comment response schema
-
-    Represents a comment on a candidacy timeline.
-    """
+    """Timeline comment response schema"""
 
     id: str
-    candidacy_id: str
-    author_id: str
-    author_name: NotRequired[str]
+    candidacyId: str
+    userId: str
     content: str
-    content_type: Literal["text/plain", "text/markdown"]
-    created_at: str
-    updated_at: str
+    contentType: Literal["text/plain", "text/markdown"]
+    createdAt: str
+    updatedAt: str
+    isInternal: NotRequired[bool]
 
 
 class HerpTimelineCommentsListResponse(TypedDict):
-    """
-    Timeline comments list response schema
+    """Timeline comments list response schema"""
 
-    Paginated list of timeline comments.
-    """
-
-    data: List[HerpTimelineCommentResponse]
-    total: NotRequired[int]
-    page: NotRequired[int]
-    per_page: NotRequired[int]
-    has_more: NotRequired[bool]
+    comments: List[HerpTimelineCommentResponse]
 
 
 # ============================================================================
-# File/Document Schemas
+# File Schemas
 # ============================================================================
 
 
 class HerpFileResponse(TypedDict):
-    """
-    File response schema
-
-    Represents an uploaded file (resume, cover letter, etc).
-    """
+    """File response schema"""
 
     id: str
-    candidacy_id: str
-    filename: str
-    file_type: Literal["resume", "career_summary", "other"]
-    content_type: str  # MIME type
-    size_bytes: int
-    url: NotRequired[str]
-    download_url: NotRequired[str]
-    uploaded_by: NotRequired[str]
-    created_at: str
-    updated_at: str
+    candidacyId: str
+    fileName: str
+    fileType: Literal["resume", "career_summary", "portfolio", "other"]
+    fileSize: int  # bytes
+    mimeType: str
+    uploadedBy: str
+    uploadedAt: str
+    url: NotRequired[str]  # Pre-signed download URL (temporary)
+    expiresAt: NotRequired[str]
 
 
 class HerpFilesListResponse(TypedDict):
-    """
-    Files list response schema
+    """Files list response schema"""
 
-    Paginated list of files.
-    """
-
-    data: List[HerpFileResponse]
-    total: NotRequired[int]
-    page: NotRequired[int]
-    per_page: NotRequired[int]
-    has_more: NotRequired[bool]
+    files: List[HerpFileResponse]
 
 
 # ============================================================================
@@ -227,98 +285,67 @@ class HerpFilesListResponse(TypedDict):
 
 
 class HerpAssignmentResponse(TypedDict):
-    """
-    Assignment response schema
-
-    Represents a team member assignment to a candidacy.
-    """
+    """Assignment response schema"""
 
     id: str
-    candidacy_id: str
-    user_id: str
-    user_name: NotRequired[str]
-    role: NotRequired[Literal["recruiter", "hiring_manager", "interviewer", "other"]]
-    created_at: str
+    candidacyId: str
+    userId: str
+    role: Literal["recruiter", "hiring_manager", "interviewer", "coordinator"]
+    assignedBy: str
+    assignedAt: str
 
 
 class HerpAssignmentsListResponse(TypedDict):
-    """
-    Assignments list response schema
+    """Assignments list response schema"""
 
-    List of assignments for a candidacy.
-    """
-
-    data: List[HerpAssignmentResponse]
-    total: NotRequired[int]
+    assignments: List[HerpAssignmentResponse]
 
 
 # ============================================================================
-# Master Data Schemas
+# Requisition (Job Position) Schemas
 # ============================================================================
 
 
 class HerpRequisitionResponse(TypedDict):
-    """
-    Requisition (job posting) response schema
-
-    Represents a job requisition/opening.
-    """
+    """Requisition (job position) response schema"""
 
     id: str
     title: str
-    description: NotRequired[str]
-    department: NotRequired[str]
+    departmentId: NotRequired[str]
+    status: Literal["open", "closed", "draft"]
+    employmentType: NotRequired[Literal["full_time", "part_time", "contract", "intern"]]
     location: NotRequired[str]
-    employment_type: NotRequired[Literal["full_time", "part_time", "contract", "intern"]]
-    status: Literal["draft", "open", "closed", "on_hold"]
-    hiring_manager_id: NotRequired[str]
-    created_at: str
-    updated_at: str
+    description: NotRequired[str]
+    createdAt: str
+    updatedAt: str
 
 
 class HerpRequisitionsListResponse(TypedDict):
-    """
-    Requisitions list response schema
+    """Requisitions list response schema"""
 
-    Paginated list of requisitions.
-    """
+    requisitions: List[HerpRequisitionResponse]
 
-    data: List[HerpRequisitionResponse]
-    total: NotRequired[int]
-    page: NotRequired[int]
-    per_page: NotRequired[int]
-    has_more: NotRequired[bool]
+
+# ============================================================================
+# User Schemas
+# ============================================================================
 
 
 class HerpUserResponse(TypedDict):
-    """
-    User response schema
-
-    Represents a team member/user in HERP.
-    """
+    """User response schema"""
 
     id: str
     name: str
     email: str
-    role: NotRequired[Literal["admin", "recruiter", "hiring_manager", "interviewer"]]
+    role: NotRequired[Literal["admin", "recruiter", "hiring_manager", "member"]]
     department: NotRequired[str]
-    is_active: NotRequired[bool]
-    created_at: str
-    updated_at: str
+    isActive: NotRequired[bool]
 
 
 class HerpUsersListResponse(TypedDict):
-    """
-    Users list response schema
+    """Users list response schema"""
 
-    Paginated list of users.
-    """
-
-    data: List[HerpUserResponse]
-    total: NotRequired[int]
-    page: NotRequired[int]
-    per_page: NotRequired[int]
-    has_more: NotRequired[bool]
+    users: List[HerpUserResponse]
 
 
 # ============================================================================
@@ -327,17 +354,12 @@ class HerpUsersListResponse(TypedDict):
 
 
 class HerpErrorResponse(TypedDict):
-    """
-    Error response schema
-
-    Standard error response from HERP API.
-    """
+    """Error response schema"""
 
     error: str
-    error_description: NotRequired[str]
-    error_code: NotRequired[str]
+    message: str
     status_code: int
-    request_id: NotRequired[str]
+    details: NotRequired[Dict[str, Any]]
 
 
 # ============================================================================
@@ -346,35 +368,20 @@ class HerpErrorResponse(TypedDict):
 
 
 class HerpPaginationMetadata(TypedDict):
-    """
-    Pagination metadata
-
-    Common pagination fields across list responses.
-    """
+    """Pagination metadata"""
 
     total: int
     page: int
-    per_page: int
-    has_more: bool
-    next_page: NotRequired[int]
-    prev_page: NotRequired[int]
+    perPage: int
+    hasMore: bool
 
 
 # ============================================================================
-# Type Aliases for Common Patterns
+# Type Aliases for Convenience
 # ============================================================================
 
-# Response types for API methods
-CandidacyResponse = HerpCandidacyResponse
-CandidacyListResponse = HerpCandidaciesListResponse
-ContactResponse = HerpContactResponse
-ContactListResponse = HerpContactsListResponse
-EvaluationResponse = HerpEvaluationResponse
-FileResponse = HerpFileResponse
-FileListResponse = HerpFilesListResponse
-TimelineCommentResponse = HerpTimelineCommentResponse
-TimelineCommentListResponse = HerpTimelineCommentsListResponse
-RequisitionResponse = HerpRequisitionResponse
-RequisitionListResponse = HerpRequisitionsListResponse
-UserResponse = HerpUserResponse
-UserListResponse = HerpUsersListResponse
+# Alias for candidacy data dict (what client methods return)
+CandidacyDict = Dict[str, Any]
+ContactDict = Dict[str, Any]
+EvaluationDict = Dict[str, Any]
+FileDict = Dict[str, Any]
