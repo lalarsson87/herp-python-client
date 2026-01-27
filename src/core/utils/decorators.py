@@ -7,17 +7,17 @@ Provides retry decorators and other utility decorators for API clients.
 import asyncio
 import time
 from functools import wraps
-from typing import Callable, Optional, Type, Tuple
+from typing import Callable, Optional, Tuple, Type
 
 from ..constants import (
-    RETRY_DEFAULT_MAX_ATTEMPTS,
     RETRY_DEFAULT_BASE_DELAY,
+    RETRY_DEFAULT_MAX_ATTEMPTS,
     RETRY_MAX_DELAY,
 )
 from ..errors.exceptions import (
-    TransientError,
     HerpRateLimitError,
     NotionRateLimitError,
+    TransientError,
 )
 from .logging import get_logger
 

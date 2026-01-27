@@ -21,6 +21,7 @@ def vcr_config():
 def herp_client():
     """Create HERP client"""
     import os
+
     from src.core.herp.client import HerpClient
     from src.core.utils.config import HerpConfig
 
@@ -91,8 +92,9 @@ def test_get_contact(herp_client):
 @pytest.mark.skip(reason="Requires write permissions")
 def test_create_contact(herp_client):
     """Test creating a contact/interview"""
-    from src.core.herp.builders import ContactBuilder
     from datetime import datetime, timedelta
+
+    from src.core.herp.builders import ContactBuilder
 
     # Get a test candidacy
     candidacies = herp_client.candidacies.list(limit=1)

@@ -7,7 +7,7 @@ circuit breaker, and observability.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional, TYPE_CHECKING
+from typing import TYPE_CHECKING, Any, Dict, Optional
 
 if TYPE_CHECKING:
     import httpx

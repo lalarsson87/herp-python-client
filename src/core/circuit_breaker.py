@@ -8,8 +8,8 @@ For sync-only circuit breaker, see utils.circuit_breaker.
 import asyncio
 import time
 from enum import Enum
-from typing import Any, Callable, Optional
 from functools import wraps
+from typing import Any, Callable, Optional
 
 from .constants import (
     CIRCUIT_BREAKER_FAILURE_THRESHOLD,

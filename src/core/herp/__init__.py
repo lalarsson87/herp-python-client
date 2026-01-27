@@ -102,21 +102,6 @@ from .mixins import (
     ValidationMixin,
 )
 
-# Models - currently not implemented
-# from .models import (
-#     Candidacy,
-#     CandidacyStatus,
-#     Contact,
-#     ContactType,
-#     Evaluation,
-#     File,
-#     FileType,
-#     Requisition,
-#     TerminationReason,
-#     TimelineComment,
-#     User,
-# )
-
 # Query DSL
 from .query_dsl import (
     CandidacyQuery,
@@ -146,6 +131,23 @@ from .webhooks import (
     print_event_handler,
     verify_webhook,
 )
+
+# Models - currently not implemented
+# from .models import (
+#     Candidacy,
+#     CandidacyStatus,
+#     Contact,
+#     ContactType,
+#     Evaluation,
+#     File,
+#     FileType,
+#     Requisition,
+#     TerminationReason,
+#     TimelineComment,
+#     User,
+# )
+
+
 
 __all__ = [
     # Main Clients (Sync)

@@ -12,11 +12,11 @@ Supports:
 - Event snapshots for performance
 """
 
-from typing import Callable, Dict, List, Optional
 import json
 from abc import ABC, abstractmethod
 from datetime import datetime
 from pathlib import Path
+from typing import Callable, Dict, List, Optional
 
 from ...utils.logging import get_logger
 from .events import Event

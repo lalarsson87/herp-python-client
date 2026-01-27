@@ -9,8 +9,9 @@ Subsequent runs replay recorded responses (no API key needed).
 """
 
 import os
-import pytest
 from unittest.mock import patch
+
+import pytest
 
 
 @pytest.fixture(scope="module")

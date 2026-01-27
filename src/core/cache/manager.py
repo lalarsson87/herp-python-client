@@ -5,9 +5,9 @@ Provides in-memory caching with TTL support for API responses and master data.
 """
 
 import time
-from typing import Any, Dict, Optional
 from dataclasses import dataclass
 from threading import Lock
+from typing import Any, Dict, Optional
 
 from ..constants import CACHE_DEFAULT_TTL, CACHE_MAX_SIZE
 from ..utils.logging import get_logger

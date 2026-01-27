@@ -4,10 +4,10 @@ Metrics Collection
 Provides metrics collection for API calls, cache operations, and performance tracking.
 """
 
-from typing import Any, Dict, Optional
+import time
 from dataclasses import dataclass, field
 from threading import Lock
-import time
+from typing import Any, Dict, Optional
 
 from ..utils.logging import get_logger
 

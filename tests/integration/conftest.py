@@ -5,6 +5,7 @@ Provides common fixtures and VCR configuration.
 """
 
 import os
+
 import pytest
 
 

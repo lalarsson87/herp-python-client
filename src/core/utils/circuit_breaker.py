@@ -7,8 +7,8 @@ Prevents cascading failures by failing fast when error threshold is exceeded.
 import time
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Any, Optional
 from functools import wraps
+from typing import Any, Callable, Optional
 
 from ..constants import (
     CIRCUIT_BREAKER_FAILURE_THRESHOLD,

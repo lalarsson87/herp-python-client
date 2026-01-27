@@ -7,10 +7,11 @@ structures returned by the HERP API, helping verify TypedDict schemas.
 """
 
 import json
-import yaml
+from collections import defaultdict
 from pathlib import Path
 from typing import Any, Dict, Set
-from collections import defaultdict
+
+import yaml
 
 
 def extract_fields(obj: Any, prefix: str = "") -> Set[str]:

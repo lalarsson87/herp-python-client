@@ -6,12 +6,13 @@ This script replaces PII (Personally Identifiable Information) in recorded
 VCR cassettes with fake/anonymized data to protect candidate privacy.
 """
 
+import hashlib
 import json
 import re
-import yaml
 from pathlib import Path
 from typing import Any, Dict
-import hashlib
+
+import yaml
 
 
 class CassetteObfuscator:

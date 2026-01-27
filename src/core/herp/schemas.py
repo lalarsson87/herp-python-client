@@ -18,7 +18,12 @@ Usage:
     print(candidacy["name"])  # Type-safe field access
 """
 
-from typing import Any, Dict, List, Literal, NotRequired, TypedDict
+from typing import Any, Dict, List, Literal, TypedDict
+
+try:
+    from typing import NotRequired  # Python 3.11+
+except ImportError:
+    from typing_extensions import NotRequired  # Python 3.10
 
 # ============================================================================
 # Nested Email Schema
