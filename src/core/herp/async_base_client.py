@@ -7,14 +7,19 @@ circuit breaker, and observability.
 """
 
 from datetime import datetime
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     import httpx
 
+try:
+    import httpx as _httpx
+
     HTTPX_AVAILABLE = True
+    httpx = _httpx
 except ImportError:
     HTTPX_AVAILABLE = False
+    httpx = None  # type: ignore
 
 from ..cache.manager import CacheManager
 from ..circuit_breaker import AsyncCircuitBreaker, CircuitBreakerConfig
@@ -92,7 +97,7 @@ class AsyncHerpBaseClient:
         self.metrics = metrics_collector or get_metrics_collector()
 
         # Initialize httpx client (will be created in __aenter__)
-        self._client: Optional[httpx.AsyncClient] = None
+        self._client: Optional["httpx.AsyncClient"] = None
 
         # Circuit breaker (optional)
         self.circuit_breaker = None
@@ -134,7 +139,7 @@ class AsyncHerpBaseClient:
 
     async def _make_request(
         self, method: str, endpoint: str, **kwargs
-    ) -> httpx.Response:
+    ) -> "httpx.Response":
         """
         Make an async HTTP request with rate limiting and metrics
 
