@@ -20,6 +20,49 @@ Python client library and Notion integration for the HERP Hire API.
 - 🔄 **Reusable mixins** for common patterns
 - 📝 **Comprehensive documentation** with 1,700+ lines of guides
 
+## Known Limitations
+
+### API Response Inconsistencies
+
+The HERP API has some quirks that affect client behavior:
+
+**Field Sets Vary by Endpoint:**
+- `GET /v1/candidacies` (LIST) returns 20 fields including `email`, `telephoneNumber`, `age`, `company`, `education`, `career`, `note`, `updatedAt`
+- `GET /v1/candidacies/{id}` (SINGLE) returns only 12 fields including `agentEmailAddress` and `links`, but missing profile fields
+- **Impact**: TypedDict schemas mark most fields as `NotRequired` to handle both response types
+
+**Pagination Parameters Ignored:**
+- The `limit` parameter is documented but ignored by the API
+- API returns all results (typically ~100 records) regardless of specified limit
+- **Workaround**: Use client-side filtering or pagination via `iter()` method
+
+**Missing Features:**
+- No `status` filter parameter in `candidacies.list()`
+- `ContactsAPI.get()` method not implemented (list-only endpoint)
+- Contact response doesn't include `candidacy_id` field (must track separately)
+
+**Query DSL Documentation:**
+- Example code in `query_dsl.py` uses snake_case field names (`requisition_id`, `created_at`)
+- Actual API responses use camelCase (`requisitionId`, `appliedAt`)
+- **Note**: Query DSL is not actively integrated with live API yet
+
+### Field Naming Convention
+
+**API Responses use camelCase:**
+```python
+# Correct field names
+candidacy["requisitionId"]  # ✅
+candidacy["appliedAt"]      # ✅
+contact["createdAt"]        # ✅
+
+# Wrong field names (will fail)
+candidacy["requisition_id"] # ❌
+candidacy["applied_at"]     # ❌
+contact["created_at"]       # ❌
+```
+
+**Schema Documentation:** See `src/core/herp/schemas.py` for complete field definitions with actual API field names.
+
 ## Installation
 
 ```bash
