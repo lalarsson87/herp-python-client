@@ -1,398 +1,253 @@
 # Contributing to HERP Python Client
 
-Thank you for considering contributing to the HERP Python Client! This document provides guidelines and instructions for contributing.
+Thank you for your interest in contributing to the HERP Python Client!
 
-## Code of Conduct
+## Development Setup
 
-- Be respectful and inclusive
-- Focus on constructive feedback
-- Help make this project accessible to all skill levels
-
-## Getting Started
-
-### Prerequisites
-
-- Python 3.10 or higher
-- Git
-- GitHub account
-
-### Setup Development Environment
+### 1. Clone the Repository
 
 ```bash
-# Fork and clone the repository
-git clone https://github.com/YOUR_USERNAME/herp-python-client.git
+git clone https://github.com/lalarsson87/herp-python-client.git
 cd herp-python-client
+```
 
-# Create a virtual environment
-python -m venv .venv
+### 2. Create Virtual Environment
+
+```bash
+python3 -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
 
-# Install in editable mode with development dependencies
+### 3. Install Dependencies
+
+```bash
+# Install package in development mode
 pip install -e ".[dev]"
 
-# Install pre-commit hooks
+# Or install dependencies separately
+pip install -r requirements.txt
+pip install -r requirements-dev.txt
+```
+
+### 4. Set Up Pre-commit Hooks
+
+Pre-commit hooks automatically run code quality checks before each commit:
+
+```bash
+pip install pre-commit
 pre-commit install
+
+# Run hooks manually on all files
+pre-commit run --all-files
 ```
 
-### Create a Branch
+The pre-commit hooks include:
+- **black**: Code formatting
+- **isort**: Import sorting
+- **flake8**: Linting
+- **mypy**: Static type checking
+- **bandit**: Security checks
+- **pydocstyle**: Docstring style checks
+- **Standard hooks**: Trailing whitespace, YAML/JSON validation, etc.
 
-```bash
-# Create a feature branch
-git checkout -b feature/your-feature-name
-
-# Or a bugfix branch
-git checkout -b fix/issue-number-description
-```
-
-## Development Workflow
-
-### 1. Code Style
-
-We use strict code formatting tools:
-
-```bash
-# Format code with black
-black src/ tests/
-
-# Sort imports with isort
-isort src/ tests/
-
-# Lint with flake8
-flake8 src/ tests/ --max-line-length=100
-
-# Type check with mypy
-mypy src/
-```
-
-**Code Style Guidelines**:
-
-- Maximum line length: 100 characters
-- Use type hints for all function signatures
-- Use TypedDict for API response types
-- Follow PEP 8 conventions
-- Write docstrings for all public APIs
-
-### 2. Testing
-
-Write tests for all new code:
+### 5. Run Tests
 
 ```bash
 # Run all tests
-pytest tests/
+pytest
 
 # Run with coverage
-pytest tests/ --cov=src --cov-report=html --cov-report=term
+pytest --cov=src --cov-report=html
 
 # Run specific test file
-pytest tests/unit/core/herp/test_client.py
+pytest tests/unit/core/herp/test_builders.py
 
-# Run tests matching a pattern
-pytest -k "test_batch"
+# Run with verbose output
+pytest -v
 ```
 
-**Testing Guidelines**:
-
-- Aim for 80%+ code coverage
-- Write unit tests for all new functions
-- Add integration tests for new features
-- Mock external API calls in tests
-- Use descriptive test names: `test_<what>_<condition>_<expected>`
-
-### 3. Documentation
-
-Update documentation for all changes:
+### 6. Type Checking
 
 ```bash
-# Check documentation
-python scripts/check_docs.py
+# Run mypy on source code
+mypy src/
 
-# Spell check and link validation
-markdownlint '**/*.md'
+# Check specific module
+mypy src/core/herp/client.py
 ```
 
-**Documentation Guidelines**:
+## Code Style Guidelines
 
-- Update relevant docs/ files
-- Add code examples for new features
-- Include docstrings with examples
-- Update README.md if adding features
-- Keep documentation clear and concise
+### Python Style
+- Follow PEP 8 guidelines
+- Line length: 100 characters (enforced by black)
+- Use type hints for function signatures
+- Write docstrings for all public functions/classes (Google style)
 
-### 4. Pre-commit Hooks
+### Example
 
-Run pre-commit hooks before committing:
+```python
+from typing import Dict, Optional
 
-```bash
-# Run all hooks
-pre-commit run --all-files
+def create_candidacy(
+    name: str,
+    requisition_id: str,
+    email: Optional[str] = None,
+) -> Dict[str, Any]:
+    """Create a new candidacy in HERP.
 
-# Run specific hook
-pre-commit run black
-pre-commit run check-docs
+    Args:
+        name: Candidate's full name
+        requisition_id: ID of the job requisition
+        email: Candidate's email address (optional)
+
+    Returns:
+        Dictionary containing the created candidacy data
+
+    Raises:
+        HerpValidationError: If required fields are missing
+        HerpAuthenticationError: If API key is invalid
+    """
+    # Implementation here
+    pass
+```
+
+## Testing Guidelines
+
+### Test Structure
+- Use unittest or pytest framework
+- One test file per source module
+- Clear, descriptive test names
+- Group related tests in classes
+
+### Test Coverage
+- Aim for >80% code coverage
+- Test both success and failure cases
+- Include edge cases and boundary conditions
+- Mock external API calls
+
+### Example Test
+
+```python
+import unittest
+from src.core.herp.builders import CandidacyBuilder
+
+
+class TestCandidacyBuilder(unittest.TestCase):
+    """Test cases for CandidacyBuilder"""
+
+    def test_basic_build(self):
+        """Test building candidacy with required fields"""
+        result = (
+            CandidacyBuilder()
+            .with_name("Jane Doe")
+            .for_requisition("req_001")
+            .build()
+        )
+
+        self.assertEqual(result["name"], "Jane Doe")
+        self.assertEqual(result["requisition_id"], "req_001")
+
+    def test_missing_name_raises_error(self):
+        """Test that missing name raises ValueError"""
+        with self.assertRaises(ValueError) as cm:
+            CandidacyBuilder().for_requisition("req_001").build()
+
+        self.assertIn("name", str(cm.exception).lower())
+```
+
+## Commit Message Guidelines
+
+Follow conventional commit format:
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+### Types
+- **feat**: New feature
+- **fix**: Bug fix
+- **docs**: Documentation changes
+- **style**: Code formatting (no functional changes)
+- **refactor**: Code refactoring
+- **test**: Adding or updating tests
+- **chore**: Maintenance tasks
+
+### Example
+
+```
+feat(builders): add TimelineCommentBuilder for creating comments
+
+Add fluent builder interface for creating timeline comments with
+support for both plain text and markdown content.
+
+Closes #42
 ```
 
 ## Pull Request Process
 
-### 1. Before Creating PR
+1. **Create a feature branch**
+   ```bash
+   git checkout -b feature/your-feature-name
+   ```
 
-- [ ] Code is formatted (black, isort)
-- [ ] Tests pass locally
-- [ ] Documentation is updated
-- [ ] Pre-commit hooks pass
-- [ ] Branch is rebased on latest main
+2. **Make your changes**
+   - Write code following style guidelines
+   - Add/update tests
+   - Update documentation
 
-### 2. Creating the PR
+3. **Run quality checks**
+   ```bash
+   # Format code
+   black src/ tests/
+   isort src/ tests/
 
-```bash
-# Push your branch
-git push origin feature/your-feature-name
+   # Run linting
+   flake8 src/ tests/
 
-# Create PR on GitHub
-gh pr create --title "Add feature X" --body "Description of changes"
-```
+   # Run tests
+   pytest --cov=src
+   ```
 
-**PR Title Format**:
+4. **Commit your changes**
+   ```bash
+   git add .
+   git commit -m "feat: your commit message"
+   ```
 
-- `feat: Add Query DSL support for complex filters`
-- `fix: Resolve race condition in async batch client`
-- `docs: Update webhooks integration guide`
-- `test: Add coverage for event sourcing`
-- `refactor: Simplify error classification logic`
+5. **Push to your fork**
+   ```bash
+   git push origin feature/your-feature-name
+   ```
 
-**PR Description Should Include**:
+6. **Create Pull Request**
+   - Provide clear description of changes
+   - Reference related issues
+   - Ensure CI passes
 
-- What changed and why
-- Related issue numbers (#123)
-- Testing performed
-- Breaking changes (if any)
-- Documentation updates
+## CI/CD Pipeline
 
-### 3. PR Checklist
+The repository uses GitHub Actions for continuous integration:
 
-- [ ] Tests added/updated
-- [ ] Documentation updated
-- [ ] CHANGELOG.md updated (for notable changes)
-- [ ] CI checks passing
-- [ ] No merge conflicts
-- [ ] Reviewed own code
+1. **Lint**: Code formatting and linting checks
+2. **Test**: Run test suite with coverage
+3. **Type Check**: MyPy static type checking
+4. **Security**: Bandit security scanning
+5. **Docs**: Build documentation
+6. **Build**: Package building
 
-### 4. Review Process
+All checks must pass before merging.
 
-- Maintainers will review within 2-3 business days
-- Address review comments
-- Push updates to the same branch
-- Request re-review when ready
+## Questions or Issues?
 
-### 5. After Merge
-
-- Delete your branch
-- Pull latest main
-- Close related issues
-
-## Code Organization
-
-### Directory Structure
-
-```
-src/core/herp/
-├── client.py              # Main client facade
-├── base_client.py         # HTTP client base
-├── async_base_client.py   # Async HTTP client
-├── types.py               # TypedDict definitions
-├── candidates.py          # Candidacy operations
-├── contacts.py            # Contact operations
-├── files.py               # File operations
-├── evaluations.py         # Evaluation operations
-├── assignments.py         # Assignment operations
-├── timeline.py            # Timeline operations
-├── master_data.py         # Master data operations
-├── builders.py            # Builder patterns
-├── mixins.py              # Reusable mixins
-├── query_dsl.py           # Query DSL
-├── pagination.py          # Pagination helpers
-├── batch_client.py        # Batch operations
-├── async_batch_client.py  # Async batch operations
-├── events/                # Event sourcing
-│   ├── events.py
-│   ├── event_store.py
-│   ├── aggregate.py
-│   └── projections.py
-└── webhooks/              # Webhook integration
-    ├── verifier.py
-    ├── handlers.py
-    └── router.py
-```
-
-### Adding New Features
-
-**For new API endpoints**:
-
-1. Add types to `types.py`
-2. Create new module in `src/core/herp/`
-3. Use mixins for common patterns
-4. Add to `client.py` facade
-5. Write tests in `tests/unit/core/herp/`
-6. Update documentation
-
-**For new async support**:
-
-1. Create `async_*.py` version
-2. Use `httpx` for HTTP
-3. Add `async`/`await` keywords
-4. Export from `async_client.py`
-5. Test with `pytest-asyncio`
-
-## Architecture Patterns
-
-### Type Safety
-
-Always use TypedDict for API responses:
-
-```python
-from typing import TypedDict, NotRequired
-
-class CandidacyResponse(TypedDict):
-    id: str
-    name: str
-    email: str
-    phone: NotRequired[str]
-```
-
-### Builder Pattern
-
-Use builders for complex object construction:
-
-```python
-class CandidacyBuilder:
-    def with_name(self, name: str) -> "CandidacyBuilder":
-        self._data["name"] = name
-        return self
-
-    def build(self) -> Dict[str, Any]:
-        self._validate()
-        return self._data
-```
-
-### Mixins
-
-Extract common patterns into mixins:
-
-```python
-class BatchFetchMixin:
-    def _batch_fetch(
-        self,
-        ids: List[str],
-        fetch_function: Callable,
-        max_workers: int = 10
-    ) -> Dict[str, Any]:
-        # Implementation
-        pass
-```
-
-### Error Handling
-
-Use pattern matching for errors (Python 3.10+):
-
-```python
-match exception:
-    case HerpRateLimitError():
-        return (ErrorSeverity.TRANSIENT, ErrorCategory.RATE_LIMIT)
-    case HerpAuthenticationError():
-        return (ErrorSeverity.PERMANENT, ErrorCategory.AUTHENTICATION)
-    case _:
-        return (ErrorSeverity.UNKNOWN, ErrorCategory.UNKNOWN)
-```
-
-## Common Tasks
-
-### Adding a New API Endpoint
-
-```python
-# 1. Add type definition (types.py)
-class NewEndpointResponse(TypedDict):
-    id: str
-    field: str
-
-# 2. Create API module (new_endpoint.py)
-class NewEndpointAPI:
-    def __init__(self, client: HerpBaseClient):
-        self.client = client
-
-    def get(self, id: str) -> NewEndpointResponse:
-        return self.client.get(f"/v1/new-endpoint/{id}")
-
-# 3. Add to main client (client.py)
-self.new_endpoint = NewEndpointAPI(self._base_client)
-
-# 4. Add tests (tests/unit/core/herp/test_new_endpoint.py)
-def test_new_endpoint_get():
-    # Test implementation
-    pass
-```
-
-### Adding Documentation
-
-```python
-# Add comprehensive docstrings
-def complex_function(param: str, option: int = 10) -> Dict[str, Any]:
-    """
-    Short description of function.
-
-    Longer description with details about what this function does,
-    when to use it, and any important considerations.
-
-    Args:
-        param: Description of param
-        option: Description of option (default: 10)
-
-    Returns:
-        Dictionary containing results with keys:
-        - field1: Description
-        - field2: Description
-
-    Raises:
-        ValueError: When param is invalid
-        HerpAPIError: When API request fails
-
-    Example:
-        >>> result = complex_function("test", option=20)
-        >>> print(result["field1"])
-        'value'
-    """
-    pass
-```
-
-## Reporting Issues
-
-### Bug Reports
-
-Include:
-
-- Python version
-- Library version
-- Minimal reproduction code
-- Expected vs actual behavior
-- Full error traceback
-
-### Feature Requests
-
-Include:
-
-- Use case description
-- Proposed API design
-- Example code
-- Benefits and trade-offs
-
-## Questions?
-
-- **GitHub Discussions**: For general questions
-- **GitHub Issues**: For bugs and features
-- **Email**: For security concerns
+- **Bug Reports**: [GitHub Issues](https://github.com/lalarsson87/herp-python-client/issues)
+- **Feature Requests**: [GitHub Discussions](https://github.com/lalarsson87/herp-python-client/discussions)
+- **Email**: engineering@belong.co.jp
 
 ## License
 
 By contributing, you agree that your contributions will be licensed under the MIT License.
-
----
-
-Thank you for contributing to HERP Python Client! 🚀

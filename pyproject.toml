@@ -3,16 +3,30 @@ requires = ["setuptools>=68.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "herp-notion-integration"
+name = "herp-python-client"
 version = "0.3.0"
-description = "Automated synchronization and workflow tools for HERP Hire ATS and Notion databases"
+description = "Production-ready Python client for HERP Hire API with caching, rate limiting, circuit breakers, and Notion integration"
 readme = "README.md"
 requires-python = ">=3.10"
 license = {text = "MIT"}
 authors = [
     {name = "Belong Inc.", email = "engineering@belong.co.jp"},
 ]
-keywords = ["herp", "notion", "ats", "recruiting", "automation", "synchronization"]
+maintainers = [
+    {name = "Lars Larsson", email = "lars@dreamly.ai"},
+]
+keywords = [
+    "herp",
+    "notion",
+    "ats",
+    "recruiting",
+    "automation",
+    "synchronization",
+    "api-client",
+    "rate-limiting",
+    "circuit-breaker",
+    "caching",
+]
 classifiers = [
     "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
@@ -23,6 +37,8 @@ classifiers = [
     "Programming Language :: Python :: 3.12",
     "Topic :: Office/Business",
     "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Internet :: WWW/HTTP",
+    "Typing :: Typed",
 ]
 
 dependencies = [
@@ -50,10 +66,10 @@ dev = [
 
 [project.urls]
 Homepage = "https://belong.co.jp"
-Documentation = "https://github.com/belong-inc/herp-notion-integration#readme"
-Repository = "https://github.com/belong-inc/herp-notion-integration"
-"Bug Tracker" = "https://github.com/belong-inc/herp-notion-integration/issues"
-Changelog = "https://github.com/belong-inc/herp-notion-integration/blob/main/CHANGELOG.md"
+Documentation = "https://github.com/lalarsson87/herp-python-client#readme"
+Repository = "https://github.com/lalarsson87/herp-python-client"
+"Bug Tracker" = "https://github.com/lalarsson87/herp-python-client/issues"
+Changelog = "https://github.com/lalarsson87/herp-python-client/blob/main/CHANGELOG.md"
 
 [tool.setuptools.packages.find]
 where = ["."]
