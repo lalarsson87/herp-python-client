@@ -206,8 +206,7 @@ class AsyncHerpBaseClient:
             if response.status_code == 429:
                 retry_after = int(response.headers.get("retry-after", 60))
                 error = HerpRateLimitError(
-                    f"Rate limit exceeded. Retry after {retry_after}s",
-                    retry_after=retry_after,
+                    f"Rate limit exceeded. Retry after {retry_after}s"
                 )
                 self.metrics.increment(
                     "herp.api.errors",

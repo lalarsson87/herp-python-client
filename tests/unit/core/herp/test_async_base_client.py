@@ -77,7 +77,7 @@ class TestAsyncHerpBaseClient:
         # Mock response
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json = AsyncMock(return_value={"data": "test"})
+        mock_response.json = Mock(return_value={"data": "test"})
         mock_response.headers = {"x-remaining-requests": "100"}
         mock_request.return_value = mock_response
 
@@ -144,7 +144,7 @@ class TestAsyncHerpBaseClient:
         """Test GET request"""
         mock_response = Mock()
         mock_response.status_code = 200
-        mock_response.json = AsyncMock(return_value={"id": "123"})
+        mock_response.json = Mock(return_value={"id": "123"})
         mock_response.headers = {"x-remaining-requests": "100"}
         mock_request.return_value = mock_response
 
@@ -157,7 +157,7 @@ class TestAsyncHerpBaseClient:
         """Test POST request"""
         mock_response = Mock()
         mock_response.status_code = 201
-        mock_response.json = AsyncMock(return_value={"id": "new"})
+        mock_response.json = Mock(return_value={"id": "new"})
         mock_response.headers = {"x-remaining-requests": "100"}
         mock_request.return_value = mock_response
 
@@ -173,12 +173,17 @@ class TestAsyncHerpBaseClient:
             await client._make_request("GET", "/test")
 
     @patch("httpx.AsyncClient")
-    async def test_connection_limits(self, mock_async_client, config):
+    async def test_connection_limits(self, mock_async_client_class, config):
         """Test that connection limits are configured"""
+        # Create a mock instance with async aclose
+        mock_instance = Mock()
+        mock_instance.aclose = AsyncMock()
+        mock_async_client_class.return_value = mock_instance
+
         async with AsyncHerpBaseClient(config) as client:
             # Verify AsyncClient was called with limits parameter
-            assert mock_async_client.called
-            call_kwargs = mock_async_client.call_args.kwargs
+            assert mock_async_client_class.called
+            call_kwargs = mock_async_client_class.call_args.kwargs
             assert "limits" in call_kwargs
             limits = call_kwargs["limits"]
             assert limits.max_keepalive_connections == 20
