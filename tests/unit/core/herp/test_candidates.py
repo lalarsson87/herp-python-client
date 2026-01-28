@@ -103,7 +103,6 @@ class TestCandidaciesAPI:
 
         assert paginator.max_pages == 5
 
-
     def test_stream(self, api):
         """Test stream is alias for iter"""
         from src.core.herp.pagination import HerpPaginator
@@ -154,9 +153,7 @@ class TestCandidaciesAPI:
 
         result = api.create(candidacy_data)
 
-        mock_client.post.assert_called_once_with(
-            "/v1/candidacies", json=candidacy_data
-        )
+        mock_client.post.assert_called_once_with("/v1/candidacies", json=candidacy_data)
         assert result["id"] == "cand_new"
         assert result["name"] == "John Doe"
 
@@ -231,7 +228,7 @@ class TestCandidaciesSearch:
     def test_search_with_query_dsl(self, api, mock_client, sample_candidacies):
         """Test search with Query DSL"""
         # Mock fetch_all to return sample data
-        with patch.object(api, 'fetch_all', return_value=sample_candidacies):
+        with patch.object(api, "fetch_all", return_value=sample_candidacies):
             query = Query().equals("status", "active")
 
             results = api.search(query)
@@ -242,7 +239,7 @@ class TestCandidaciesSearch:
 
     def test_search_with_legacy_filters(self, api, mock_client, sample_candidacies):
         """Test search with legacy filters"""
-        with patch.object(api, 'fetch_all', return_value=sample_candidacies):
+        with patch.object(api, "fetch_all", return_value=sample_candidacies):
             results = api.search(name="John")
 
             # Should return candidacies with "John" in name
@@ -251,7 +248,7 @@ class TestCandidaciesSearch:
 
     def test_search_with_limit(self, api, mock_client, sample_candidacies):
         """Test search respects limit"""
-        with patch.object(api, 'fetch_all', return_value=sample_candidacies):
+        with patch.object(api, "fetch_all", return_value=sample_candidacies):
             results = api.search(status="active", limit=1)
 
             # Should return only 1 result
@@ -259,7 +256,7 @@ class TestCandidaciesSearch:
 
     def test_search_no_results(self, api, mock_client, sample_candidacies):
         """Test search with no matching results"""
-        with patch.object(api, 'fetch_all', return_value=sample_candidacies):
+        with patch.object(api, "fetch_all", return_value=sample_candidacies):
             query = Query().equals("status", "deleted")
 
             results = api.search(query)
@@ -268,7 +265,7 @@ class TestCandidaciesSearch:
 
     def test_search_logs_result_count(self, api, mock_client, sample_candidacies):
         """Test search logs number of results"""
-        with patch.object(api, 'fetch_all', return_value=sample_candidacies):
+        with patch.object(api, "fetch_all", return_value=sample_candidacies):
             with patch("src.core.herp.candidates.logger") as mock_logger:
                 api.search(status="active")
 
@@ -335,8 +332,12 @@ class TestQueryMatching:
         """Test nested query"""
         inner_query = Query()
         inner_query.logical_operator = LogicalOperator.OR
-        inner_query.filters.append(FieldFilter("status", FilterOperator.EQUALS, "active"))
-        inner_query.filters.append(FieldFilter("status", FilterOperator.EQUALS, "pending"))
+        inner_query.filters.append(
+            FieldFilter("status", FilterOperator.EQUALS, "active")
+        )
+        inner_query.filters.append(
+            FieldFilter("status", FilterOperator.EQUALS, "pending")
+        )
 
         outer_query = Query()
         outer_query.logical_operator = LogicalOperator.AND
@@ -500,9 +501,24 @@ class TestLegacyFilters:
     def sample_candidacies(self):
         """Sample candidacies"""
         return [
-            {"id": "1", "name": "John Doe", "email": "john@example.com", "status": "active"},
-            {"id": "2", "name": "Jane Smith", "email": "jane@example.com", "status": "inactive"},
-            {"id": "3", "name": "Bob Johnson", "email": "bob@example.com", "status": "active"},
+            {
+                "id": "1",
+                "name": "John Doe",
+                "email": "john@example.com",
+                "status": "active",
+            },
+            {
+                "id": "2",
+                "name": "Jane Smith",
+                "email": "jane@example.com",
+                "status": "inactive",
+            },
+            {
+                "id": "3",
+                "name": "Bob Johnson",
+                "email": "bob@example.com",
+                "status": "active",
+            },
         ]
 
     def test_legacy_filter_name(self, api, sample_candidacies):
@@ -513,7 +529,9 @@ class TestLegacyFilters:
 
     def test_legacy_filter_email(self, api, sample_candidacies):
         """Test legacy email filter"""
-        results = api._apply_legacy_filters(sample_candidacies, {"email": "john@example.com"})
+        results = api._apply_legacy_filters(
+            sample_candidacies, {"email": "john@example.com"}
+        )
 
         assert len(results) == 1
         assert results[0]["name"] == "John Doe"

@@ -37,10 +37,12 @@ class TestCandidacyExporter:
         """Test export_to_csv creates CSV file"""
         # Mock streaming candidacies
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe", "email": "john@example.com"},
-                {"id": "cand_2", "name": "Jane Smith", "email": "jane@example.com"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe", "email": "john@example.com"},
+                    {"id": "cand_2", "name": "Jane Smith", "email": "jane@example.com"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.csv"
@@ -53,10 +55,12 @@ class TestCandidacyExporter:
     def test_export_to_csv_correct_content(self, exporter, mock_client, tmp_path):
         """Test export_to_csv writes correct CSV content"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe"},
-                {"id": "cand_2", "name": "Jane Smith"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe"},
+                    {"id": "cand_2", "name": "Jane Smith"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.csv"
@@ -75,9 +79,16 @@ class TestCandidacyExporter:
     def test_export_to_csv_with_fields_filter(self, exporter, mock_client, tmp_path):
         """Test export_to_csv with specific fields"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe", "email": "john@example.com", "status": "active"},
-            ])
+            return_value=iter(
+                [
+                    {
+                        "id": "cand_1",
+                        "name": "John Doe",
+                        "email": "john@example.com",
+                        "status": "active",
+                    },
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.csv"
@@ -95,7 +106,9 @@ class TestCandidacyExporter:
             assert "email" not in rows[0] or rows[0]["email"] == ""
             assert "status" not in rows[0] or rows[0]["status"] == ""
 
-    def test_export_to_csv_creates_nested_directories(self, exporter, mock_client, tmp_path):
+    def test_export_to_csv_creates_nested_directories(
+        self, exporter, mock_client, tmp_path
+    ):
         """Test export_to_csv creates parent directories"""
         mock_client.candidacies.stream = Mock(return_value=iter([{"id": "cand_1"}]))
 
@@ -112,15 +125,12 @@ class TestCandidacyExporter:
 
         output_file = tmp_path / "candidacies.csv"
         exporter.export_to_csv(
-            str(output_file),
-            updated_since="2026-01-20T00:00:00Z",
-            chunk_size=50
+            str(output_file), updated_since="2026-01-20T00:00:00Z", chunk_size=50
         )
 
         # Verify stream was called with correct parameters
         mock_client.candidacies.stream.assert_called_once_with(
-            updated_since="2026-01-20T00:00:00Z",
-            chunk_size=50
+            updated_since="2026-01-20T00:00:00Z", chunk_size=50
         )
 
     def test_export_to_csv_empty_dataset(self, exporter, mock_client, tmp_path):
@@ -138,10 +148,12 @@ class TestCandidacyExporter:
     def test_export_to_jsonl_creates_file(self, exporter, mock_client, tmp_path):
         """Test export_to_jsonl creates JSONL file"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe"},
-                {"id": "cand_2", "name": "Jane Smith"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe"},
+                    {"id": "cand_2", "name": "Jane Smith"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.jsonl"
@@ -154,10 +166,12 @@ class TestCandidacyExporter:
     def test_export_to_jsonl_correct_format(self, exporter, mock_client, tmp_path):
         """Test export_to_jsonl writes correct JSONL format (one JSON per line)"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe"},
-                {"id": "cand_2", "name": "Jane Smith"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe"},
+                    {"id": "cand_2", "name": "Jane Smith"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.jsonl"
@@ -177,9 +191,11 @@ class TestCandidacyExporter:
     def test_export_to_jsonl_with_fields_filter(self, exporter, mock_client, tmp_path):
         """Test export_to_jsonl with specific fields"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe", "email": "john@example.com"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe", "email": "john@example.com"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.jsonl"
@@ -196,9 +212,11 @@ class TestCandidacyExporter:
     def test_export_to_jsonl_preserves_unicode(self, exporter, mock_client, tmp_path):
         """Test export_to_jsonl preserves unicode characters"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "José García"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "José García"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.jsonl"
@@ -213,10 +231,12 @@ class TestCandidacyExporter:
     def test_export_to_json_creates_file(self, exporter, mock_client, tmp_path):
         """Test export_to_json creates JSON file"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe"},
-                {"id": "cand_2", "name": "Jane Smith"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe"},
+                    {"id": "cand_2", "name": "Jane Smith"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.json"
@@ -229,10 +249,12 @@ class TestCandidacyExporter:
     def test_export_to_json_correct_format(self, exporter, mock_client, tmp_path):
         """Test export_to_json writes correct JSON array format"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe"},
-                {"id": "cand_2", "name": "Jane Smith"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe"},
+                    {"id": "cand_2", "name": "Jane Smith"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.json"
@@ -250,9 +272,7 @@ class TestCandidacyExporter:
     def test_export_to_json_with_max_records(self, exporter, mock_client, tmp_path):
         """Test export_to_json respects max_records limit"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": f"cand_{i}"} for i in range(100)
-            ])
+            return_value=iter([{"id": f"cand_{i}"} for i in range(100)])
         )
 
         output_file = tmp_path / "candidacies.json"
@@ -268,9 +288,11 @@ class TestCandidacyExporter:
     def test_export_to_json_with_fields_filter(self, exporter, mock_client, tmp_path):
         """Test export_to_json with specific fields"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "name": "John Doe", "email": "john@example.com"},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "name": "John Doe", "email": "john@example.com"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.json"
@@ -286,9 +308,7 @@ class TestCandidacyExporter:
 
     def test_export_convenience_method_csv(self, exporter, mock_client, tmp_path):
         """Test export() convenience method for CSV"""
-        mock_client.candidacies.stream = Mock(
-            return_value=iter([{"id": "cand_1"}])
-        )
+        mock_client.candidacies.stream = Mock(return_value=iter([{"id": "cand_1"}]))
 
         output_file = tmp_path / "candidacies.csv"
         count = exporter.export(str(output_file), format="csv")
@@ -298,9 +318,7 @@ class TestCandidacyExporter:
 
     def test_export_convenience_method_jsonl(self, exporter, mock_client, tmp_path):
         """Test export() convenience method for JSONL"""
-        mock_client.candidacies.stream = Mock(
-            return_value=iter([{"id": "cand_1"}])
-        )
+        mock_client.candidacies.stream = Mock(return_value=iter([{"id": "cand_1"}]))
 
         output_file = tmp_path / "candidacies.jsonl"
         count = exporter.export(str(output_file), format="jsonl")
@@ -310,9 +328,7 @@ class TestCandidacyExporter:
 
     def test_export_convenience_method_json(self, exporter, mock_client, tmp_path):
         """Test export() convenience method for JSON"""
-        mock_client.candidacies.stream = Mock(
-            return_value=iter([{"id": "cand_1"}])
-        )
+        mock_client.candidacies.stream = Mock(return_value=iter([{"id": "cand_1"}]))
 
         output_file = tmp_path / "candidacies.json"
         count = exporter.export(str(output_file), format="json")
@@ -349,17 +365,17 @@ class TestDataExporter:
 
     def test_export_resource_csv(self, exporter, tmp_path):
         """Test export_resource with CSV format"""
-        resources = iter([
-            {"id": "res_1", "name": "Resource 1"},
-            {"id": "res_2", "name": "Resource 2"},
-        ])
+        resources = iter(
+            [
+                {"id": "res_1", "name": "Resource 1"},
+                {"id": "res_2", "name": "Resource 2"},
+            ]
+        )
 
         output_file = tmp_path / "resources.csv"
 
         count = exporter.export_resource(
-            resource_iter=resources,
-            output_file=str(output_file),
-            format="csv"
+            resource_iter=resources, output_file=str(output_file), format="csv"
         )
 
         assert count == 2
@@ -375,17 +391,17 @@ class TestDataExporter:
 
     def test_export_resource_jsonl(self, exporter, tmp_path):
         """Test export_resource with JSONL format"""
-        resources = iter([
-            {"id": "res_1", "name": "Resource 1"},
-            {"id": "res_2", "name": "Resource 2"},
-        ])
+        resources = iter(
+            [
+                {"id": "res_1", "name": "Resource 1"},
+                {"id": "res_2", "name": "Resource 2"},
+            ]
+        )
 
         output_file = tmp_path / "resources.jsonl"
 
         count = exporter.export_resource(
-            resource_iter=resources,
-            output_file=str(output_file),
-            format="jsonl"
+            resource_iter=resources, output_file=str(output_file), format="jsonl"
         )
 
         assert count == 2
@@ -400,17 +416,17 @@ class TestDataExporter:
 
     def test_export_resource_json(self, exporter, tmp_path):
         """Test export_resource with JSON format"""
-        resources = iter([
-            {"id": "res_1", "name": "Resource 1"},
-            {"id": "res_2", "name": "Resource 2"},
-        ])
+        resources = iter(
+            [
+                {"id": "res_1", "name": "Resource 1"},
+                {"id": "res_2", "name": "Resource 2"},
+            ]
+        )
 
         output_file = tmp_path / "resources.json"
 
         count = exporter.export_resource(
-            resource_iter=resources,
-            output_file=str(output_file),
-            format="json"
+            resource_iter=resources, output_file=str(output_file), format="json"
         )
 
         assert count == 2
@@ -425,9 +441,11 @@ class TestDataExporter:
 
     def test_export_resource_with_fields_filter(self, exporter, tmp_path):
         """Test export_resource with specific fields"""
-        resources = iter([
-            {"id": "res_1", "name": "Resource 1", "description": "Desc 1"},
-        ])
+        resources = iter(
+            [
+                {"id": "res_1", "name": "Resource 1", "description": "Desc 1"},
+            ]
+        )
 
         output_file = tmp_path / "resources.csv"
 
@@ -435,7 +453,7 @@ class TestDataExporter:
             resource_iter=resources,
             output_file=str(output_file),
             format="csv",
-            fields=["id", "name"]
+            fields=["id", "name"],
         )
 
         # Verify only specified fields
@@ -454,9 +472,7 @@ class TestDataExporter:
 
         with pytest.raises(ValueError, match="Unsupported format"):
             exporter.export_resource(
-                resource_iter=resources,
-                output_file=str(output_file),
-                format="xml"
+                resource_iter=resources, output_file=str(output_file), format="xml"
             )
 
     def test_export_resource_creates_directories(self, exporter, tmp_path):
@@ -465,9 +481,7 @@ class TestDataExporter:
         output_file = tmp_path / "exports" / "2026" / "resources.csv"
 
         exporter.export_resource(
-            resource_iter=resources,
-            output_file=str(output_file),
-            format="csv"
+            resource_iter=resources, output_file=str(output_file), format="csv"
         )
 
         assert output_file.exists()
@@ -491,9 +505,11 @@ class TestExportEdgeCases:
     def test_export_csv_with_unicode(self, exporter, mock_client, tmp_path):
         """Test CSV export preserves unicode characters"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"name": "José García", "city": "São Paulo"},
-            ])
+            return_value=iter(
+                [
+                    {"name": "José García", "city": "São Paulo"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.csv"
@@ -509,9 +525,11 @@ class TestExportEdgeCases:
     def test_export_csv_with_special_characters(self, exporter, mock_client, tmp_path):
         """Test CSV export handles special characters (quotes, commas)"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"name": 'John "Johnny" Doe', "skills": "Python, JavaScript, Go"},
-            ])
+            return_value=iter(
+                [
+                    {"name": 'John "Johnny" Doe', "skills": "Python, JavaScript, Go"},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.csv"
@@ -527,14 +545,13 @@ class TestExportEdgeCases:
 
     def test_export_large_dataset_streaming(self, exporter, mock_client, tmp_path):
         """Test export handles large datasets via streaming"""
+
         # Simulate large dataset
         def generate_large_dataset():
             for i in range(10000):
                 yield {"id": f"cand_{i}", "name": f"Candidate {i}"}
 
-        mock_client.candidacies.stream = Mock(
-            return_value=generate_large_dataset()
-        )
+        mock_client.candidacies.stream = Mock(return_value=generate_large_dataset())
 
         output_file = tmp_path / "candidacies.jsonl"
         count = exporter.export_to_jsonl(str(output_file))
@@ -545,9 +562,11 @@ class TestExportEdgeCases:
     def test_export_json_preserves_data_types(self, exporter, mock_client, tmp_path):
         """Test JSON export preserves data types (int, bool, null)"""
         mock_client.candidacies.stream = Mock(
-            return_value=iter([
-                {"id": "cand_1", "age": 30, "active": True, "notes": None},
-            ])
+            return_value=iter(
+                [
+                    {"id": "cand_1", "age": 30, "active": True, "notes": None},
+                ]
+            )
         )
 
         output_file = tmp_path / "candidacies.json"
@@ -569,9 +588,7 @@ class TestExportEdgeCases:
         output_file = tmp_path / "empty.csv"
 
         count = exporter.export_resource(
-            resource_iter=resources,
-            output_file=str(output_file),
-            format="csv"
+            resource_iter=resources, output_file=str(output_file), format="csv"
         )
 
         assert count == 0

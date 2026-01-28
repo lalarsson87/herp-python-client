@@ -98,7 +98,9 @@ class TestTimelineAPI:
 
     def test_add_comment_markdown(self, api, mock_client):
         """Test adding markdown comment"""
-        comment_text = "# Interview Notes\n\n- Strong technical skills\n- Good culture fit"
+        comment_text = (
+            "# Interview Notes\n\n- Strong technical skills\n- Good culture fit"
+        )
         mock_client.post.return_value = {
             "id": "comment_new",
             "comment": comment_text,

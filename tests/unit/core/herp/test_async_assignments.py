@@ -103,7 +103,11 @@ class TestAsyncAssignmentsAPIAssign:
 
         mock_client.post = AsyncMock(
             return_value={
-                "assignment": {"user_id": "user_1", "role": "recruiter", "id": "assign_1"}
+                "assignment": {
+                    "user_id": "user_1",
+                    "role": "recruiter",
+                    "id": "assign_1",
+                }
             }
         )
 
@@ -248,9 +252,7 @@ class TestAsyncAssignmentsAPIIntegration:
 
         # List again (should show new assignment)
         mock_client.get = AsyncMock(
-            return_value={
-                "assignments": [{"user_id": "user_1", "role": "recruiter"}]
-            }
+            return_value={"assignments": [{"user_id": "user_1", "role": "recruiter"}]}
         )
         assignments = await api_instance.list("cand_123")
         assert len(assignments) == 1
@@ -332,9 +334,7 @@ class TestAsyncAssignmentsAPIEdgeCases:
         )
 
         # Assign multiple users concurrently
-        tasks = [
-            api_instance.assign("cand_123", f"user_{i}") for i in range(3)
-        ]
+        tasks = [api_instance.assign("cand_123", f"user_{i}") for i in range(3)]
         results = await asyncio.gather(*tasks)
 
         assert len(results) == 3

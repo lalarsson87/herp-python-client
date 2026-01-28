@@ -34,7 +34,9 @@ class TestWebhookVerifier:
         """Test payload"""
         return b'{"event": "candidacy.created", "data": {"id": "123"}}'
 
-    def compute_valid_signature(self, secret: str, payload: bytes, timestamp: str) -> str:
+    def compute_valid_signature(
+        self, secret: str, payload: bytes, timestamp: str
+    ) -> str:
         """Helper to compute valid signature"""
         signed_payload = timestamp.encode("utf-8") + payload
         return hmac.new(
@@ -99,9 +101,7 @@ class TestWebhookVerifier:
         old_timestamp = str(int(time.time()) - 600)
         signature = self.compute_valid_signature(secret, payload, old_timestamp)
 
-        with pytest.raises(
-            WebhookVerificationError, match="Webhook timestamp too old"
-        ):
+        with pytest.raises(WebhookVerificationError, match="Webhook timestamp too old"):
             verifier.verify(payload, signature, old_timestamp)
 
     def test_verify_timestamp_from_future(self, verifier, secret, payload):
@@ -129,18 +129,14 @@ class TestWebhookVerifier:
         invalid_timestamp = "not_a_timestamp"
         signature = "some_signature"
 
-        with pytest.raises(
-            WebhookVerificationError, match="Invalid timestamp format"
-        ):
+        with pytest.raises(WebhookVerificationError, match="Invalid timestamp format"):
             verifier.verify(payload, signature, invalid_timestamp)
 
     def test_verify_none_timestamp(self, verifier, payload):
         """Test verification fails with None timestamp"""
         signature = "some_signature"
 
-        with pytest.raises(
-            WebhookVerificationError, match="Invalid timestamp format"
-        ):
+        with pytest.raises(WebhookVerificationError, match="Invalid timestamp format"):
             verifier.verify(payload, signature, None)
 
     def test_verify_custom_tolerance(self, secret, payload):
@@ -152,9 +148,7 @@ class TestWebhookVerifier:
         old_timestamp = str(int(time.time()) - 30)
         signature = self.compute_valid_signature(secret, payload, old_timestamp)
 
-        with pytest.raises(
-            WebhookVerificationError, match="Webhook timestamp too old"
-        ):
+        with pytest.raises(WebhookVerificationError, match="Webhook timestamp too old"):
             verifier.verify(payload, signature, old_timestamp)
 
     def test_verify_or_none_valid(self, verifier, secret, payload):
@@ -215,7 +209,9 @@ class TestWebhookVerifier:
 
         assert sig1 != sig2
 
-    def test_compute_signature_different_for_different_timestamps(self, verifier, payload):
+    def test_compute_signature_different_for_different_timestamps(
+        self, verifier, payload
+    ):
         """Test different timestamps produce different signatures"""
         timestamp1 = str(int(time.time()))
         timestamp2 = str(int(time.time()) + 1)
@@ -245,7 +241,9 @@ class TestWebhookVerifier:
 
     def test_special_characters_in_payload(self, verifier, secret):
         """Test verification works with special characters"""
-        payload = b'{"text": "\xe2\x9c\x93 \xc2\xa9 \xf0\x9f\x8e\x89"}'  # Unicode characters
+        payload = (
+            b'{"text": "\xe2\x9c\x93 \xc2\xa9 \xf0\x9f\x8e\x89"}'  # Unicode characters
+        )
         timestamp = str(int(time.time()))
         signature = self.compute_valid_signature(secret, payload, timestamp)
 
@@ -365,9 +363,7 @@ class TestWebhookVerificationEdgeCases:
         verifier = WebhookVerifier(secret, tolerance_seconds=300)  # 5 minute tolerance
 
         # Should reject old timestamp (replay attack)
-        with pytest.raises(
-            WebhookVerificationError, match="Webhook timestamp too old"
-        ):
+        with pytest.raises(WebhookVerificationError, match="Webhook timestamp too old"):
             verifier.verify(payload, signature, old_timestamp)
 
     def test_zero_tolerance(self):

@@ -472,7 +472,9 @@ class TestAsyncBatchHerpClientEdgeCases:
             mock_client = AsyncMock()
             # Generate 150 successful responses
             mock_client.candidacies.get = AsyncMock(
-                side_effect=[{"id": f"cand_{i}", "name": f"User {i}"} for i in range(150)]
+                side_effect=[
+                    {"id": f"cand_{i}", "name": f"User {i}"} for i in range(150)
+                ]
             )
             MockClient.return_value = mock_client
 

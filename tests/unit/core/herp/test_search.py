@@ -27,7 +27,9 @@ class TestSearchFilter:
 
     def test_not_equals_operator(self):
         """Test NOT_EQUALS operator"""
-        filter_obj = SearchFilter(SearchField.STATUS, SearchOperator.NOT_EQUALS, "inactive")
+        filter_obj = SearchFilter(
+            SearchField.STATUS, SearchOperator.NOT_EQUALS, "inactive"
+        )
 
         assert filter_obj.matches({"status": "active"}) is True
         assert filter_obj.matches({"status": "inactive"}) is False
@@ -52,7 +54,9 @@ class TestSearchFilter:
 
     def test_ends_with_operator(self):
         """Test ENDS_WITH operator (case-insensitive)"""
-        filter_obj = SearchFilter(SearchField.EMAIL, SearchOperator.ENDS_WITH, "@company.com")
+        filter_obj = SearchFilter(
+            SearchField.EMAIL, SearchOperator.ENDS_WITH, "@company.com"
+        )
 
         assert filter_obj.matches({"email": "john@company.com"}) is True
         assert filter_obj.matches({"email": "JANE@COMPANY.COM"}) is True
@@ -61,7 +65,9 @@ class TestSearchFilter:
 
     def test_in_operator(self):
         """Test IN operator"""
-        filter_obj = SearchFilter(SearchField.STATUS, SearchOperator.IN, ["active", "pending"])
+        filter_obj = SearchFilter(
+            SearchField.STATUS, SearchOperator.IN, ["active", "pending"]
+        )
 
         assert filter_obj.matches({"status": "active"}) is True
         assert filter_obj.matches({"status": "pending"}) is True
@@ -69,14 +75,18 @@ class TestSearchFilter:
 
     def test_not_in_operator(self):
         """Test NOT_IN operator"""
-        filter_obj = SearchFilter(SearchField.STATUS, SearchOperator.NOT_IN, ["inactive", "rejected"])
+        filter_obj = SearchFilter(
+            SearchField.STATUS, SearchOperator.NOT_IN, ["inactive", "rejected"]
+        )
 
         assert filter_obj.matches({"status": "active"}) is True
         assert filter_obj.matches({"status": "inactive"}) is False
 
     def test_greater_than_operator(self):
         """Test GREATER_THAN operator"""
-        filter_obj = SearchFilter(SearchField.CREATED_AT, SearchOperator.GREATER_THAN, "2026-01-15")
+        filter_obj = SearchFilter(
+            SearchField.CREATED_AT, SearchOperator.GREATER_THAN, "2026-01-15"
+        )
 
         assert filter_obj.matches({"created_at": "2026-01-20"}) is True
         assert filter_obj.matches({"created_at": "2026-01-10"}) is False
@@ -84,7 +94,9 @@ class TestSearchFilter:
 
     def test_less_than_operator(self):
         """Test LESS_THAN operator"""
-        filter_obj = SearchFilter(SearchField.CREATED_AT, SearchOperator.LESS_THAN, "2026-01-15")
+        filter_obj = SearchFilter(
+            SearchField.CREATED_AT, SearchOperator.LESS_THAN, "2026-01-15"
+        )
 
         assert filter_obj.matches({"created_at": "2026-01-10"}) is True
         assert filter_obj.matches({"created_at": "2026-01-20"}) is False
@@ -92,7 +104,9 @@ class TestSearchFilter:
 
     def test_greater_or_equal_operator(self):
         """Test GREATER_OR_EQUAL operator"""
-        filter_obj = SearchFilter(SearchField.CREATED_AT, SearchOperator.GREATER_OR_EQUAL, "2026-01-15")
+        filter_obj = SearchFilter(
+            SearchField.CREATED_AT, SearchOperator.GREATER_OR_EQUAL, "2026-01-15"
+        )
 
         assert filter_obj.matches({"created_at": "2026-01-15"}) is True
         assert filter_obj.matches({"created_at": "2026-01-20"}) is True
@@ -100,7 +114,9 @@ class TestSearchFilter:
 
     def test_less_or_equal_operator(self):
         """Test LESS_OR_EQUAL operator"""
-        filter_obj = SearchFilter(SearchField.CREATED_AT, SearchOperator.LESS_OR_EQUAL, "2026-01-15")
+        filter_obj = SearchFilter(
+            SearchField.CREATED_AT, SearchOperator.LESS_OR_EQUAL, "2026-01-15"
+        )
 
         assert filter_obj.matches({"created_at": "2026-01-15"}) is True
         assert filter_obj.matches({"created_at": "2026-01-10"}) is True
@@ -415,10 +431,30 @@ class TestSearchIntegration:
     def test_complex_search_scenario(self):
         """Test complex search with multiple filters and sort"""
         records = [
-            {"name": "John Doe", "email": "john@company.com", "status": "active", "created_at": "2026-01-20"},
-            {"name": "Jane Smith", "email": "jane@company.com", "status": "active", "created_at": "2026-01-15"},
-            {"name": "Bob Johnson", "email": "bob@other.com", "status": "active", "created_at": "2026-01-25"},
-            {"name": "Alice Brown", "email": "alice@company.com", "status": "inactive", "created_at": "2026-01-30"},
+            {
+                "name": "John Doe",
+                "email": "john@company.com",
+                "status": "active",
+                "created_at": "2026-01-20",
+            },
+            {
+                "name": "Jane Smith",
+                "email": "jane@company.com",
+                "status": "active",
+                "created_at": "2026-01-15",
+            },
+            {
+                "name": "Bob Johnson",
+                "email": "bob@other.com",
+                "status": "active",
+                "created_at": "2026-01-25",
+            },
+            {
+                "name": "Alice Brown",
+                "email": "alice@company.com",
+                "status": "inactive",
+                "created_at": "2026-01-30",
+            },
         ]
 
         # Search for active candidates from company.com, sorted by creation date
@@ -463,7 +499,9 @@ class TestSearchEdgeCases:
 
     def test_filter_with_numeric_values(self):
         """Test filter with numeric comparisons"""
-        filter_obj = SearchFilter(SearchField.CREATED_AT, SearchOperator.GREATER_THAN, 100)
+        filter_obj = SearchFilter(
+            SearchField.CREATED_AT, SearchOperator.GREATER_THAN, 100
+        )
 
         assert filter_obj.matches({"created_at": 150}) is True
         assert filter_obj.matches({"created_at": 50}) is False

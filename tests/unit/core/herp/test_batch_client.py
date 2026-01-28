@@ -581,7 +581,9 @@ class TestBatchHerpClientEdgeCases:
         mock_client.get_candidacy = Mock(side_effect=lambda cid: {"id": cid})
 
         # Test with 1000 items
-        result = batch_client.fetch_candidacies_batch([f"cand_{i}" for i in range(1000)])
+        result = batch_client.fetch_candidacies_batch(
+            [f"cand_{i}" for i in range(1000)]
+        )
 
         assert result.total == 1000
         assert len(result.successful) == 1000

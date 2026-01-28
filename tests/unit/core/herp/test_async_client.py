@@ -41,7 +41,9 @@ class TestAsyncHerpClientInitialization:
         """Test initialization with circuit breaker"""
         from src.core.circuit_breaker import CircuitBreakerConfig
 
-        cb_config = CircuitBreakerConfig(name="test_cb", fail_max=10, timeout_duration=60)
+        cb_config = CircuitBreakerConfig(
+            name="test_cb", fail_max=10, timeout_duration=60
+        )
         client = AsyncHerpClient(
             config, enable_circuit_breaker=True, circuit_breaker_config=cb_config
         )

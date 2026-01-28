@@ -71,6 +71,7 @@ class TestContactsAPI:
 
     def test_list_for_multiple(self, api, mock_client):
         """Test batch fetching contacts for multiple candidacies"""
+
         # Mock list() to return different contacts for each candidacy
         def mock_list(candidacy_id):
             return [{"id": f"contact_{candidacy_id}"}]

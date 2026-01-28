@@ -246,9 +246,7 @@ class TestEvaluationsAPIEdgeCases:
     def test_submit_with_special_characters_in_responses(self, api):
         """Test submit preserves special characters"""
         responses = {
-            "q1": {
-                "comment": 'Comment with "quotes", <tags>, and symbols: @#$%^&*()'
-            }
+            "q1": {"comment": 'Comment with "quotes", <tags>, and symbols: @#$%^&*()'}
         }
 
         api.client.put.return_value = {"id": "eval_123"}

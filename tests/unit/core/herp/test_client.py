@@ -142,7 +142,9 @@ class TestHerpClient:
         with patch.object(client.candidacies, "list") as mock_list:
             mock_list.return_value = [{"id": "cand_1"}]
 
-            result = client.list_candidacies(updated_since="2026-01-01", page=2, limit=100)
+            result = client.list_candidacies(
+                updated_since="2026-01-01", page=2, limit=100
+            )
 
             mock_list.assert_called_once_with("2026-01-01", 2, 100)
             assert len(result) == 1
@@ -152,7 +154,9 @@ class TestHerpClient:
         with patch.object(client.candidacies, "iter") as mock_iter:
             mock_iter.return_value = iter([{"id": "cand_1"}])
 
-            result = client.iter_candidacies(updated_since="2026-01-01", limit=50, max_pages=5)
+            result = client.iter_candidacies(
+                updated_since="2026-01-01", limit=50, max_pages=5
+            )
 
             mock_iter.assert_called_once_with("2026-01-01", 50, 5)
             assert list(result) == [{"id": "cand_1"}]
@@ -238,7 +242,9 @@ class TestHerpClient:
         with patch.object(client.contacts, "list_for_multiple") as mock_list_multi:
             mock_list_multi.return_value = {"cand_1": [{"id": "contact_1"}]}
 
-            result = client.list_contacts_for_multiple(["cand_1", "cand_2"], max_workers=10)
+            result = client.list_contacts_for_multiple(
+                ["cand_1", "cand_2"], max_workers=10
+            )
 
             mock_list_multi.assert_called_once_with(["cand_1", "cand_2"], 10)
             assert "cand_1" in result
@@ -273,9 +279,13 @@ class TestHerpClient:
         with patch.object(client.timeline, "add_comment") as mock_add:
             mock_add.return_value = {"id": "comment_new"}
 
-            result = client.add_timeline_comment("cand_123", "Great candidate!", "text/plain")
+            result = client.add_timeline_comment(
+                "cand_123", "Great candidate!", "text/plain"
+            )
 
-            mock_add.assert_called_once_with("cand_123", "Great candidate!", "text/plain")
+            mock_add.assert_called_once_with(
+                "cand_123", "Great candidate!", "text/plain"
+            )
             assert result["id"] == "comment_new"
 
     def test_add_timeline_comment_default_content_type(self, client):
