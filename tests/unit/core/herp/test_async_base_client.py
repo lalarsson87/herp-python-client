@@ -5,6 +5,7 @@ Tests for async base HTTP client
 from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
+import pytest_asyncio
 
 pytest.importorskip("httpx")
 
@@ -32,7 +33,7 @@ def config():
     )
 
 
-@pytest.fixture
+@pytest_asyncio.fixture
 async def async_client(config):
     """Create test async client"""
     async with AsyncHerpBaseClient(config) as client:
