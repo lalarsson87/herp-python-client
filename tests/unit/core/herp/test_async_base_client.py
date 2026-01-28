@@ -172,11 +172,14 @@ class TestAsyncHerpBaseClient:
         with pytest.raises(RuntimeError, match="Client not initialized"):
             await client._make_request("GET", "/test")
 
-    async def test_connection_limits(self, config):
+    @patch("httpx.AsyncClient")
+    async def test_connection_limits(self, mock_async_client, config):
         """Test that connection limits are configured"""
         async with AsyncHerpBaseClient(config) as client:
-            assert client._client is not None
-            # Check limits are set (httpx.Limits object)
-            limits = client._client._limits
+            # Verify AsyncClient was called with limits parameter
+            assert mock_async_client.called
+            call_kwargs = mock_async_client.call_args.kwargs
+            assert "limits" in call_kwargs
+            limits = call_kwargs["limits"]
             assert limits.max_keepalive_connections == 20
             assert limits.max_connections == 50

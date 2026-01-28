@@ -192,10 +192,10 @@ class AsyncHerpBaseClient:
 
             # Record success metric
             duration = (datetime.now() - start_time).total_seconds()
-            self.metrics.record_histogram(
+            self.metrics.timing(
                 "herp.api.request.duration",
-                duration,
-                labels={
+                duration * 1000,  # Convert to milliseconds
+                tags={
                     "method": method,
                     "endpoint": endpoint.split("?")[0],
                     "status": str(response.status_code),
@@ -209,25 +209,25 @@ class AsyncHerpBaseClient:
                     f"Rate limit exceeded. Retry after {retry_after}s",
                     retry_after=retry_after,
                 )
-                self.metrics.increment_counter(
+                self.metrics.increment(
                     "herp.api.errors",
-                    labels={"type": "rate_limit", "endpoint": endpoint},
+                    tags={"type": "rate_limit", "endpoint": endpoint},
                 )
                 raise error
 
             if response.status_code == 401:
                 error = HerpAuthenticationError("Invalid API token")
-                self.metrics.increment_counter(
+                self.metrics.increment(
                     "herp.api.errors",
-                    labels={"type": "authentication", "endpoint": endpoint},
+                    tags={"type": "authentication", "endpoint": endpoint},
                 )
                 raise error
 
             if response.status_code == 404:
                 error = HerpNotFoundError(f"Resource not found: {endpoint}")
-                self.metrics.increment_counter(
+                self.metrics.increment(
                     "herp.api.errors",
-                    labels={"type": "not_found", "endpoint": endpoint},
+                    tags={"type": "not_found", "endpoint": endpoint},
                 )
                 raise error
 
@@ -235,9 +235,9 @@ class AsyncHerpBaseClient:
                 error = HerpServerError(
                     f"Server error: {response.status_code} - {response.text}"
                 )
-                self.metrics.increment_counter(
+                self.metrics.increment(
                     "herp.api.errors",
-                    labels={"type": "server_error", "endpoint": endpoint},
+                    tags={"type": "server_error", "endpoint": endpoint},
                 )
                 raise error
 
@@ -245,9 +245,9 @@ class AsyncHerpBaseClient:
                 error = HerpAPIError(
                     f"API error: {response.status_code} - {response.text}"
                 )
-                self.metrics.increment_counter(
+                self.metrics.increment(
                     "herp.api.errors",
-                    labels={"type": "client_error", "endpoint": endpoint},
+                    tags={"type": "client_error", "endpoint": endpoint},
                 )
                 raise error
 
@@ -256,17 +256,17 @@ class AsyncHerpBaseClient:
         except httpx.RequestError as e:
             # Network errors
             duration = (datetime.now() - start_time).total_seconds()
-            self.metrics.record_histogram(
+            self.metrics.timing(
                 "herp.api.request.duration",
-                duration,
-                labels={
+                duration * 1000,  # Convert to milliseconds
+                tags={
                     "method": method,
                     "endpoint": endpoint.split("?")[0],
                     "status": "error",
                 },
             )
-            self.metrics.increment_counter(
-                "herp.api.errors", labels={"type": "network", "endpoint": endpoint}
+            self.metrics.increment(
+                "herp.api.errors", tags={"type": "network", "endpoint": endpoint}
             )
             raise HerpAPIError(f"Network error: {str(e)}") from e
 
@@ -327,9 +327,9 @@ class AsyncHerpBaseClient:
                     f"Deduplicating GET request: {endpoint}",
                     extra={"request_key": request_key},
                 )
-                self.metrics.increment_counter(
+                self.metrics.increment(
                     "herp.api.deduplication.hit",
-                    labels={"endpoint": endpoint.split("?")[0]},
+                    tags={"endpoint": endpoint.split("?")[0]},
                 )
                 # Wait for existing request to complete
                 return await self._in_flight_requests[request_key]
