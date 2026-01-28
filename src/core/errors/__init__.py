@@ -12,6 +12,11 @@ from .classification import (
     classify_error,
     smart_retry,
 )
+from .context import (
+    ErrorContext,
+    OperationContext,
+    create_api_error_context,
+)
 from .exceptions import (  # Base exceptions; HERP exceptions; Notion exceptions; Sync exceptions; Cache exceptions; Circuit breaker; Retry; Helpers
     CacheError,
     CacheFullError,
@@ -52,6 +57,10 @@ __all__ = [
     "classify_error",
     "calculate_backoff",
     "smart_retry",
+    # Context
+    "ErrorContext",
+    "OperationContext",
+    "create_api_error_context",
     # Base exceptions
     "HerpNotionError",
     "TransientError",

@@ -8,6 +8,7 @@ creating, updating, and managing candidate hiring stages.
 
 from typing import Any, Dict, Iterator, List, Optional
 
+from ..errors.context import create_api_error_context
 from ..utils.logging import get_logger
 from ..utils.validators import validate_list_response, validate_response
 from .base_client import HerpBaseClient
@@ -365,8 +366,25 @@ class CandidaciesAPI:
 
         Returns:
             Candidacy record
+
+        Raises:
+            HerpNotFoundError: If candidacy not found
+            HerpAPIError: On API errors
         """
-        return self.client.get(f"/v1/candidacies/{candidacy_id}")
+        try:
+            return self.client.get(f"/v1/candidacies/{candidacy_id}")
+        except Exception as e:
+            # Add structured error context for debugging
+            context = create_api_error_context(
+                operation="get",
+                resource_type="candidacy",
+                resource_id=candidacy_id,
+            )
+            logger.error(
+                f"Failed to fetch candidacy: {candidacy_id}",
+                extra={"context": context.to_dict(), "error": str(e)},
+            )
+            raise
 
     def create(self, data: Dict[str, Any]) -> Dict[str, Any]:
         """
