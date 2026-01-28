@@ -226,7 +226,11 @@ class MetricsMixin:
     """
 
     def _record_operation_metric(
-        self, operation: str, success: bool = True, error: Optional[str] = None, **labels
+        self,
+        operation: str,
+        success: bool = True,
+        error: Optional[str] = None,
+        **labels,
     ) -> None:
         """
         Record metric for an operation
