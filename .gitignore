@@ -56,6 +56,10 @@ dmypy.json
 *~
 .DS_Store
 
+# Node
+node_modules/
+package-lock.json
+
 # Logs
 *.log
 logs/
@@ -89,3 +93,4 @@ docker-compose.override.yml
 .scrum/
 htmlcov/
 .coverage
+docs/archive/mcp-configs-archived/
