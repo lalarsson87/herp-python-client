@@ -1,0 +1,60 @@
+{
+  "mcpServers": {
+    "notion": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@notionhq/client-mcp"
+      ],
+      "env": {
+        "NOTION_API_KEY": "${NOTION_API_TOKEN}"
+      },
+      "disabled": false,
+      "alwaysAllow": [
+        "notion-search",
+        "notion-database-query",
+        "notion-create-database-row",
+        "notion-update-page",
+        "notion-create-page"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-github"
+      ],
+      "env": {
+        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
+      },
+      "disabled": false,
+      "alwaysAllow": [
+        "create_or_update_file",
+        "create_pull_request",
+        "create_issue",
+        "get_file_contents",
+        "list_issues"
+      ]
+    },
+    "filesystem": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-filesystem",
+        "/Users/larsson-l/git/herp-python-client"
+      ],
+      "disabled": true,
+      "note": "Enable only when file operations are needed beyond standard tools"
+    }
+  },
+  "notes": {
+    "description": "MCP servers configured for HERP Python Client development",
+    "recommended_enabled": ["notion", "github"],
+    "performance_note": "Keep under 10 enabled servers to maintain context window efficiency",
+    "usage": {
+      "notion": "For HERP-Notion sync operations, candidate data management",
+      "github": "For PR creation, issue management, CI/CD monitoring",
+      "filesystem": "Disabled by default, enable only when needed for advanced file operations"
+    }
+  }
+}

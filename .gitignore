@@ -69,6 +69,7 @@ logs/
 *.sqlite3
 data/
 !tests/fixtures/*.json
+!.claude/mcp-servers.json
 
 # Secrets and config
 .env
