@@ -111,10 +111,18 @@ class AsyncHerpBaseClient:
 
     async def __aenter__(self):
         """Async context manager entry"""
+        # Configure connection limits to prevent resource exhaustion
+        limits = httpx.Limits(
+            max_keepalive_connections=20,  # Idle connections to keep
+            max_connections=50,             # Total connections allowed
+            keepalive_expiry=30.0,          # Close idle connections after 30s
+        )
+
         self._client = httpx.AsyncClient(
             base_url=self.base_url,
             headers=self._get_headers(),
             timeout=httpx.Timeout(self.config.timeout, connect=10.0),
+            limits=limits,
         )
         return self
 

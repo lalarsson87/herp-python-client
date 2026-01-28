@@ -10,6 +10,7 @@ import time
 from typing import Any, Dict, Optional
 
 import requests
+from requests.adapters import HTTPAdapter
 
 from ..cache import CacheManager
 from ..errors.exceptions import (
@@ -57,7 +58,21 @@ class HerpBaseClient:
         self.base_url = config.base_url
         self.cache_manager = cache_manager
         self.rate_limiter = AdaptiveRateLimiter(requests_per_minute=config.rate_limit)
+
+        # Configure session with connection pooling
         self.session = requests.Session()
+
+        # Configure HTTP adapter with connection pooling
+        # pool_connections: Number of urllib3 connection pools to cache
+        # pool_maxsize: Maximum number of connections to save in the pool
+        adapter = HTTPAdapter(
+            pool_connections=20,  # Number of connection pools (hosts)
+            pool_maxsize=20,      # Max connections per pool
+            max_retries=0,        # We handle retries ourselves via smart_retry
+        )
+        self.session.mount('https://', adapter)
+        self.session.mount('http://', adapter)
+
         self.session.headers.update(self._get_headers())
 
         # Metrics collector (mandatory - uses global if not provided)
