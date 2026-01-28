@@ -2,17 +2,18 @@
 Tests for base HTTP client
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
 import requests
-from unittest.mock import Mock, patch, MagicMock
 
-from src.core.herp.base_client import HerpBaseClient
 from src.core.errors.exceptions import (
     HerpAPIError,
-    HerpRateLimitError,
     HerpAuthenticationError,
     HerpNotFoundError,
+    HerpRateLimitError,
 )
+from src.core.herp.base_client import HerpBaseClient
 from src.core.utils.config import HerpConfig
 
 

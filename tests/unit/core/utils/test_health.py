@@ -2,17 +2,18 @@
 Tests for health check utilities
 """
 
+from unittest.mock import MagicMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
 
 from src.core.utils.health import (
     check_api_connectivity,
-    check_rate_limiter,
     check_cache,
     check_configuration,
+    check_rate_limiter,
+    get_system_info,
     perform_health_check,
     validate_configuration,
-    get_system_info,
 )
 
 
