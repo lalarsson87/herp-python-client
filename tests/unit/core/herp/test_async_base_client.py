@@ -33,12 +33,10 @@ def config():
 
 
 @pytest.fixture
-async def client(config):
+async def async_client(config):
     """Create test async client"""
-    client = AsyncHerpBaseClient(config)
-    await client.__aenter__()
-    yield client
-    await client.__aexit__(None, None, None)
+    async with AsyncHerpBaseClient(config) as client:
+        yield client
 
 
 @pytest.mark.asyncio
@@ -73,7 +71,7 @@ class TestAsyncHerpBaseClient:
         assert headers["Accept"] == "application/json"
 
     @patch("httpx.AsyncClient.request")
-    async def test_successful_request(self, mock_request, client):
+    async def test_successful_request(self, mock_request, async_client):
         """Test successful API request"""
         # Mock response
         mock_response = Mock()
@@ -83,12 +81,12 @@ class TestAsyncHerpBaseClient:
         mock_request.return_value = mock_response
 
         # Make request
-        response = await client._make_request("GET", "/test")
+        response = await async_client._make_request("GET", "/test")
 
         assert response.status_code == 200
 
     @patch("httpx.AsyncClient.request")
-    async def test_rate_limit_error(self, mock_request, client):
+    async def test_rate_limit_error(self, mock_request, async_client):
         """Test rate limit error handling"""
         # Mock 429 response
         mock_response = Mock()
@@ -98,10 +96,10 @@ class TestAsyncHerpBaseClient:
 
         # Should raise HerpRateLimitError
         with pytest.raises(HerpRateLimitError):
-            await client._make_request("GET", "/test")
+            await async_client._make_request("GET", "/test")
 
     @patch("httpx.AsyncClient.request")
-    async def test_authentication_error(self, mock_request, client):
+    async def test_authentication_error(self, mock_request, async_client):
         """Test authentication error handling"""
         # Mock 401 response
         mock_response = Mock()
@@ -111,10 +109,10 @@ class TestAsyncHerpBaseClient:
 
         # Should raise HerpAuthenticationError
         with pytest.raises(HerpAuthenticationError):
-            await client._make_request("GET", "/test")
+            await async_client._make_request("GET", "/test")
 
     @patch("httpx.AsyncClient.request")
-    async def test_not_found_error(self, mock_request, client):
+    async def test_not_found_error(self, mock_request, async_client):
         """Test 404 error handling"""
         # Mock 404 response
         mock_response = Mock()
@@ -124,10 +122,10 @@ class TestAsyncHerpBaseClient:
 
         # Should raise HerpNotFoundError
         with pytest.raises(HerpNotFoundError):
-            await client._make_request("GET", "/test")
+            await async_client._make_request("GET", "/test")
 
     @patch("httpx.AsyncClient.request")
-    async def test_server_error(self, mock_request, client):
+    async def test_server_error(self, mock_request, async_client):
         """Test server error handling"""
         # Mock 500 response
         mock_response = Mock()
@@ -138,10 +136,10 @@ class TestAsyncHerpBaseClient:
 
         # Should raise HerpServerError
         with pytest.raises(HerpServerError):
-            await client._make_request("GET", "/test")
+            await async_client._make_request("GET", "/test")
 
     @patch("httpx.AsyncClient.request")
-    async def test_get_request(self, mock_request, client):
+    async def test_get_request(self, mock_request, async_client):
         """Test GET request"""
         mock_response = Mock()
         mock_response.status_code = 200
@@ -149,12 +147,12 @@ class TestAsyncHerpBaseClient:
         mock_response.headers = {"x-remaining-requests": "100"}
         mock_request.return_value = mock_response
 
-        result = await client.get("/test", params={"page": 1})
+        result = await async_client.get("/test", params={"page": 1})
 
         assert result == {"id": "123"}
 
     @patch("httpx.AsyncClient.request")
-    async def test_post_request(self, mock_request, client):
+    async def test_post_request(self, mock_request, async_client):
         """Test POST request"""
         mock_response = Mock()
         mock_response.status_code = 201
@@ -162,7 +160,7 @@ class TestAsyncHerpBaseClient:
         mock_response.headers = {"x-remaining-requests": "100"}
         mock_request.return_value = mock_response
 
-        result = await client.post("/test", json={"name": "test"})
+        result = await async_client.post("/test", json={"name": "test"})
 
         assert result == {"id": "new"}
 
