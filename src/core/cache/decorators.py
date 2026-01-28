@@ -110,9 +110,7 @@ def cached_response(
 
             # If no cache manager, just call function
             if cache_manager is None:
-                logger.debug(
-                    f"{func.__name__}: No cache manager, skipping cache"
-                )
+                logger.debug(f"{func.__name__}: No cache manager, skipping cache")
                 return func(self, *args, **kwargs)
 
             # Generate cache key
@@ -132,9 +130,7 @@ def cached_response(
             # Store in cache if result is not None
             if result is not None:
                 cache_manager.set(cache_key, result, ttl=ttl)
-                logger.debug(
-                    f"{func.__name__}: Cached result with TTL={ttl}s"
-                )
+                logger.debug(f"{func.__name__}: Cached result with TTL={ttl}s")
 
             return result
 
@@ -192,9 +188,7 @@ def async_cached_response(
 
             # If no cache manager, just call function
             if cache_manager is None:
-                logger.debug(
-                    f"{func.__name__}: No cache manager, skipping cache"
-                )
+                logger.debug(f"{func.__name__}: No cache manager, skipping cache")
                 return await func(self, *args, **kwargs)
 
             # Generate cache key
@@ -214,9 +208,7 @@ def async_cached_response(
             # Store in cache if result is not None
             if result is not None:
                 cache_manager.set(cache_key, result, ttl=ttl)
-                logger.debug(
-                    f"{func.__name__}: Cached result with TTL={ttl}s"
-                )
+                logger.debug(f"{func.__name__}: Cached result with TTL={ttl}s")
 
             return result
 
@@ -225,7 +217,9 @@ def async_cached_response(
     return decorator
 
 
-def invalidate_cache(key_pattern: Optional[str] = None, cache_attr: str = "cache_manager"):
+def invalidate_cache(
+    key_pattern: Optional[str] = None, cache_attr: str = "cache_manager"
+):
     """
     Decorator to invalidate cache entries after function execution
 

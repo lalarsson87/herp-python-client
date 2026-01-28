@@ -30,8 +30,10 @@ class ErrorContext:
         ... )
     """
 
-    operation: str  # Operation being performed (e.g., "get_candidacy", "list_requisitions")
-    resource_type: str  # Resource type (e.g., "candidacy", "contact", "requisition")
+    # Operation being performed (e.g., "get_candidacy", "list_requisitions")
+    operation: str
+    # Resource type (e.g., "candidacy", "contact", "requisition")
+    resource_type: str
     resource_id: Optional[str] = None  # Specific resource ID if applicable
     params: Optional[Dict[str, Any]] = None  # Request parameters
     user_id: Optional[str] = None  # User ID if available

@@ -122,8 +122,8 @@ class AsyncHerpBaseClient:
         # Configure connection limits to prevent resource exhaustion
         limits = httpx.Limits(
             max_keepalive_connections=20,  # Idle connections to keep
-            max_connections=50,             # Total connections allowed
-            keepalive_expiry=30.0,          # Close idle connections after 30s
+            max_connections=50,  # Total connections allowed
+            keepalive_expiry=30.0,  # Close idle connections after 30s
         )
 
         self._client = httpx.AsyncClient(
@@ -330,11 +330,11 @@ class AsyncHerpBaseClient:
             if request_key in self._in_flight_requests:
                 logger.debug(
                     f"Deduplicating GET request: {endpoint}",
-                    extra={"request_key": request_key}
+                    extra={"request_key": request_key},
                 )
                 self.metrics.increment_counter(
                     "herp.api.deduplication.hit",
-                    labels={"endpoint": endpoint.split("?")[0]}
+                    labels={"endpoint": endpoint.split("?")[0]},
                 )
                 # Wait for existing request to complete
                 return await self._in_flight_requests[request_key]
@@ -360,21 +360,23 @@ class AsyncHerpBaseClient:
     @async_smart_retry(
         max_attempts=3, base_delay=1.0, retryable_exceptions=(HerpAPIError,)
     )
-    async def get(self, endpoint: str, deduplicate: bool = True, **kwargs) -> Dict[str, Any]:
+    async def get(
+        self, endpoint: str, deduplicate: bool = True, **kwargs
+    ) -> Dict[str, Any]:
         """
         Async GET request with optional deduplication
 
         Args:
             endpoint: API endpoint
-            deduplicate: Enable request deduplication for concurrent requests (default: True)
+            deduplicate: Enable request deduplication (default: True)
             **kwargs: Additional arguments (params, headers, etc.)
 
         Returns:
             Parsed JSON response
 
         Note:
-            When deduplicate=True, concurrent GET requests for the same resource
-            will share a single API call, reducing duplicate network traffic by 30-50%
+            When deduplicate=True, concurrent requests for same resource
+            share a single API call, reducing duplicate traffic by 30-50%
             in high-concurrency scenarios.
 
             Example:

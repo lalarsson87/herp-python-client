@@ -67,11 +67,11 @@ class HerpBaseClient:
         # pool_maxsize: Maximum number of connections to save in the pool
         adapter = HTTPAdapter(
             pool_connections=20,  # Number of connection pools (hosts)
-            pool_maxsize=20,      # Max connections per pool
-            max_retries=0,        # We handle retries ourselves via smart_retry
+            pool_maxsize=20,  # Max connections per pool
+            max_retries=0,  # We handle retries ourselves via smart_retry
         )
-        self.session.mount('https://', adapter)
-        self.session.mount('http://', adapter)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
 
         self.session.headers.update(self._get_headers())
 
