@@ -64,7 +64,8 @@ class TestCachedResponse:
         call_count = 0
 
         class TestClass:
-            cache_manager = cache_manager
+            def __init__(self, cache_mgr):
+                self.cache_manager = cache_mgr
 
             @cached_response(ttl=60)
             def get_data(self, id):
@@ -72,7 +73,7 @@ class TestCachedResponse:
                 call_count += 1
                 return {"id": id, "data": "test"}
 
-        obj = TestClass()
+        obj = TestClass(cache_manager)
 
         # First call - cache miss
         result1 = obj.get_data("123")
@@ -89,7 +90,8 @@ class TestCachedResponse:
         call_count = 0
 
         class TestClass:
-            cache_manager = cache_manager
+            def __init__(self, cache_mgr):
+                self.cache_manager = cache_mgr
 
             @cached_response(ttl=60)
             def get_data(self, id):
@@ -97,7 +99,7 @@ class TestCachedResponse:
                 call_count += 1
                 return {"id": id}
 
-        obj = TestClass()
+        obj = TestClass(cache_manager)
 
         obj.get_data("123")
         obj.get_data("456")  # Different arg - cache miss
@@ -109,7 +111,8 @@ class TestCachedResponse:
         call_count = 0
 
         class TestClass:
-            cache_manager = cache_manager
+            def __init__(self, cache_mgr):
+                self.cache_manager = cache_mgr
 
             @cached_response(ttl=1)  # 1 second TTL
             def get_data(self, id):
@@ -117,7 +120,7 @@ class TestCachedResponse:
                 call_count += 1
                 return {"id": id}
 
-        obj = TestClass()
+        obj = TestClass(cache_manager)
 
         obj.get_data("123")
         assert call_count == 1
@@ -152,7 +155,8 @@ class TestCachedResponse:
         call_count = 0
 
         class TestClass:
-            cache_manager = cache_manager
+            def __init__(self, cache_mgr):
+                self.cache_manager = cache_mgr
 
             @cached_response(ttl=60)
             def get_data(self, id):
@@ -160,7 +164,7 @@ class TestCachedResponse:
                 call_count += 1
                 return None
 
-        obj = TestClass()
+        obj = TestClass(cache_manager)
 
         obj.get_data("123")
         obj.get_data("123")
@@ -176,7 +180,8 @@ class TestInvalidateCache:
         """Test invalidating all cache"""
 
         class TestClass:
-            cache_manager = cache_manager
+            def __init__(self, cache_mgr):
+                self.cache_manager = cache_mgr
 
             @cached_response(ttl=60)
             def get_data(self, id):
@@ -186,7 +191,7 @@ class TestInvalidateCache:
             def update_data(self, id, data):
                 return {"id": id, "updated": True}
 
-        obj = TestClass()
+        obj = TestClass(cache_manager)
 
         # Cache some data
         obj.get_data("123")
@@ -222,7 +227,8 @@ class TestAsyncCachedResponse:
         call_count = 0
 
         class TestClass:
-            cache_manager = cache_manager
+            def __init__(self, cache_mgr):
+                self.cache_manager = cache_mgr
 
             @async_cached_response(ttl=60)
             async def get_data(self, id):
@@ -230,7 +236,7 @@ class TestAsyncCachedResponse:
                 call_count += 1
                 return {"id": id, "data": "test"}
 
-        obj = TestClass()
+        obj = TestClass(cache_manager)
 
         # First call - cache miss
         result1 = await obj.get_data("123")

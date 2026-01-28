@@ -19,8 +19,8 @@ from src.core.utils.health import (
 class TestAPIConnectivity:
     """Test API connectivity checks"""
 
-    @patch('src.core.utils.health.HerpClient')
-    @patch('src.core.utils.health.load_herp_config')
+    @patch("src.core.utils.health.HerpClient")
+    @patch("src.core.utils.health.load_herp_config")
     def test_api_accessible(self, mock_config, mock_client_class):
         """Test successful API connectivity"""
         # Mock config
@@ -39,8 +39,8 @@ class TestAPIConnectivity:
         assert "API is accessible" in result["message"]
         assert result["details"]["base_url"] == "https://api.test.com"
 
-    @patch('src.core.utils.health.HerpClient')
-    @patch('src.core.utils.health.load_herp_config')
+    @patch("src.core.utils.health.HerpClient")
+    @patch("src.core.utils.health.load_herp_config")
     def test_api_not_accessible(self, mock_config, mock_client_class):
         """Test failed API connectivity"""
         mock_config.return_value = Mock()
@@ -55,8 +55,8 @@ class TestAPIConnectivity:
 class TestRateLimiterCheck:
     """Test rate limiter health checks"""
 
-    @patch('src.core.utils.health.HerpClient')
-    @patch('src.core.utils.health.load_herp_config')
+    @patch("src.core.utils.health.HerpClient")
+    @patch("src.core.utils.health.load_herp_config")
     def test_rate_limiter_ok(self, mock_config, mock_client_class):
         """Test rate limiter health check"""
         mock_config.return_value = Mock()
@@ -79,37 +79,20 @@ class TestRateLimiterCheck:
 class TestCacheCheck:
     """Test cache health checks"""
 
-    @patch('src.core.utils.health.get_cache_manager')
-    def test_cache_enabled(self, mock_get_cache):
-        """Test cache health check when enabled"""
-        mock_cache = Mock()
-        mock_cache.get_stats.return_value = {
-            "size": 10,
-            "max_size": 1000,
-        }
-        mock_get_cache.return_value = mock_cache
-
+    def test_cache_check(self):
+        """Test cache health check (no global cache manager exists)"""
         result = check_cache()
 
+        # Since there's no global cache manager, should report as disabled
         assert result["healthy"] is True
-        assert result["details"]["enabled"] is True
-        assert result["details"]["size"] == 10
-
-    @patch('src.core.utils.health.get_cache_manager')
-    def test_cache_disabled(self, mock_get_cache):
-        """Test cache health check when disabled"""
-        mock_get_cache.return_value = None
-
-        result = check_cache()
-
-        assert result["healthy"] is True
+        assert result["message"] == "Cache disabled"
         assert result["details"]["enabled"] is False
 
 
 class TestConfigurationCheck:
     """Test configuration validation"""
 
-    @patch('src.core.utils.health.load_herp_config')
+    @patch("src.core.utils.health.load_herp_config")
     def test_valid_configuration(self, mock_config):
         """Test valid configuration"""
         mock_cfg = Mock()
@@ -124,7 +107,7 @@ class TestConfigurationCheck:
         assert result["healthy"] is True
         assert "valid" in result["message"].lower()
 
-    @patch('src.core.utils.health.load_herp_config')
+    @patch("src.core.utils.health.load_herp_config")
     def test_invalid_configuration(self, mock_config):
         """Test invalid configuration"""
         mock_cfg = Mock()
@@ -143,10 +126,10 @@ class TestConfigurationCheck:
 class TestPerformHealthCheck:
     """Test comprehensive health check"""
 
-    @patch('src.core.utils.health.check_cache')
-    @patch('src.core.utils.health.check_rate_limiter')
-    @patch('src.core.utils.health.check_api_connectivity')
-    @patch('src.core.utils.health.check_configuration')
+    @patch("src.core.utils.health.check_cache")
+    @patch("src.core.utils.health.check_rate_limiter")
+    @patch("src.core.utils.health.check_api_connectivity")
+    @patch("src.core.utils.health.check_configuration")
     def test_all_checks(self, mock_config, mock_api, mock_rate, mock_cache):
         """Test that all health checks are performed"""
         mock_config.return_value = {"healthy": True, "message": "OK"}
@@ -165,12 +148,15 @@ class TestPerformHealthCheck:
 class TestValidateConfiguration:
     """Test configuration validation"""
 
-    @patch.dict('os.environ', {
-        'HERP_API_TOKEN': 'test_token',
-        'HERP_BASE_URL': 'https://api.test.com',
-        'HERP_RATE_LIMIT': '100',
-        'HERP_TIMEOUT': '30'
-    })
+    @patch.dict(
+        "os.environ",
+        {
+            "HERP_API_TOKEN": "test_token",
+            "HERP_BASE_URL": "https://api.test.com",
+            "HERP_RATE_LIMIT": "100",
+            "HERP_TIMEOUT": "30",
+        },
+    )
     def test_valid_env_vars(self):
         """Test validation with valid environment variables"""
         results = validate_configuration()
@@ -180,7 +166,7 @@ class TestValidateConfiguration:
         assert results["Rate Limit"]["valid"] is True
         assert results["Timeout"]["valid"] is True
 
-    @patch.dict('os.environ', {}, clear=True)
+    @patch.dict("os.environ", {}, clear=True)
     def test_missing_env_vars(self):
         """Test validation with missing environment variables"""
         results = validate_configuration()
@@ -189,7 +175,7 @@ class TestValidateConfiguration:
         assert results["Base URL"]["valid"] is False
         assert "suggestion" in results["API Token"]
 
-    @patch.dict('os.environ', {'HERP_RATE_LIMIT': 'invalid'})
+    @patch.dict("os.environ", {"HERP_RATE_LIMIT": "invalid"})
     def test_invalid_rate_limit(self):
         """Test validation with invalid rate limit"""
         results = validate_configuration()
