@@ -235,6 +235,9 @@ def exception_from_http_status(
     api = api.lower()
 
     # Map status codes to exception classes
+    # Type annotation: all exceptions inherit from HerpNotionError
+    default_exc: type[HerpNotionError]
+
     if api == "herp":
         status_map = {
             400: HerpValidationError,
