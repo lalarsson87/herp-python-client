@@ -155,7 +155,7 @@ class PaginationMixin:
         from .pagination import HerpPaginator
 
         paginator = HerpPaginator(
-            fetch_function=fetch_function, limit=limit, max_pages=max_pages, **kwargs
+            fetch_func=fetch_function, limit=limit, max_pages=max_pages, **kwargs
         )
 
         yield from paginator
