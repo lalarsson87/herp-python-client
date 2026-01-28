@@ -44,6 +44,7 @@ from .handlers import (
     log_event_handler,
     print_event_handler,
 )
+from .replay import EventReplayer, EventStore
 from .router import (
     AsyncWebhookRouter,
     FailedEvent,
@@ -73,4 +74,7 @@ __all__ = [
     "WebhookRouter",
     "AsyncWebhookRouter",
     "FailedEvent",
+    # Replay
+    "EventStore",
+    "EventReplayer",
 ]
