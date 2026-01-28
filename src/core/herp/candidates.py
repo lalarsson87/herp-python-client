@@ -89,7 +89,7 @@ class CandidaciesAPI:
             ...     sync_to_notion(candidacy)
         """
         return HerpPaginator(
-            fetch_function=self.list,
+            fetch_func=self.list,
             limit=limit,
             max_pages=max_pages,
             updated_since=updated_since,

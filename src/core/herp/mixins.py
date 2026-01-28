@@ -7,7 +7,7 @@ Eliminates code duplication and ensures consistency.
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from typing import Any, Callable, Dict, List
+from typing import Any, Callable, Dict, List, Optional
 
 from ..utils.logging import get_logger
 
@@ -137,7 +137,7 @@ class PaginationMixin:
         self,
         fetch_function: Callable,
         limit: int = 100,
-        max_pages: int = None,
+        max_pages: Optional[int] = None,
         **kwargs,
     ):
         """
@@ -226,7 +226,7 @@ class MetricsMixin:
     """
 
     def _record_operation_metric(
-        self, operation: str, success: bool = True, error: str = None, **labels
+        self, operation: str, success: bool = True, error: Optional[str] = None, **labels
     ) -> None:
         """
         Record metric for an operation

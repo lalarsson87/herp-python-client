@@ -346,7 +346,7 @@ class EventSubscriber:
             original_append(event)
             self._notify(event)
 
-        event_store.append = append_with_notification
+        event_store.append = append_with_notification  # type: ignore[method-assign]
 
     def subscribe(self, event_type: str, handler: Callable[[Event], None]) -> None:
         """
