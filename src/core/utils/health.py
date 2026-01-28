@@ -91,6 +91,7 @@ def check_cache() -> Dict[str, Any]:
         cache_manager = None
         try:
             from ..cache.manager import _global_cache_manager
+
             cache_manager = _global_cache_manager
         except (ImportError, AttributeError):
             pass
