@@ -270,7 +270,9 @@ class TestMetricsCollectorThreadSafety:
             for _ in range(increments_per_thread):
                 collector.increment("shared.counter")
 
-        threads = [threading.Thread(target=increment_counter) for _ in range(num_threads)]
+        threads = [
+            threading.Thread(target=increment_counter) for _ in range(num_threads)
+        ]
 
         for t in threads:
             t.start()
