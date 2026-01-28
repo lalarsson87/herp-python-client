@@ -118,3 +118,44 @@ class HerpPaginator:
             "count": len(items),
             "has_more": len(items) >= self.limit,
         }
+
+    def __iter__(self):
+        """
+        Make paginator iterable for use in for loops and yield from
+
+        Yields:
+            Individual items across all pages
+        """
+        offset = 0
+        page = 1
+
+        while True:
+            # Check if we've hit max pages
+            if self.max_pages and page > self.max_pages:
+                logger.debug(f"Reached max_pages limit: {self.max_pages}")
+                break
+
+            # Fetch current page
+            logger.debug(f"Fetching page {page} (offset={offset}, limit={self.limit})")
+            result = self.fetch_func(offset=offset, limit=self.limit, **self.kwargs)
+
+            # Handle both list and dict responses
+            if isinstance(result, list):
+                items = result
+            elif isinstance(result, dict) and "data" in result:
+                items = result.get("data", [])
+            else:
+                items = []
+
+            # Yield items one by one
+            for item in items:
+                yield item
+
+            # Check if we're done
+            if not items or len(items) < self.limit:
+                logger.debug("No more items to fetch")
+                break
+
+            # Move to next page
+            offset += self.limit
+            page += 1

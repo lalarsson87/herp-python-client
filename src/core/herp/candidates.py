@@ -56,7 +56,7 @@ class CandidaciesAPI:
             For fetching all candidacies across all pages, use iter()
             or fetch_all() instead.
         """
-        params = {"page": page, "limit": limit}
+        params: Dict[str, Any] = {"page": page, "limit": limit}
         if updated_since:
             params["updatedSince"] = updated_since
 

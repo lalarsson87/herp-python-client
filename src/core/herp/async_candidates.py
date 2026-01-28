@@ -114,7 +114,7 @@ class AsyncCandidaciesAPI:
         Returns:
             List of candidacy records
         """
-        params = {"page": page, "limit": min(limit, 100)}
+        params: Dict[str, Any] = {"page": page, "limit": min(limit, 100)}
 
         if updated_since:
             params["updatedSince"] = updated_since
