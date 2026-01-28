@@ -2,8 +2,9 @@
 Tests for Async HERP Client (Main Facade)
 """
 
+from unittest.mock import AsyncMock, Mock, patch
+
 import pytest
-from unittest.mock import Mock, AsyncMock, patch
 
 from src.core.herp.async_client import AsyncHerpClient
 from src.core.utils.config import HerpConfig
@@ -115,13 +116,13 @@ class TestAsyncHerpClientContextManager:
             MockBaseClient.return_value = mock_base
 
             async with AsyncHerpClient(config) as client:
+                from src.core.herp.async_assignments import AsyncAssignmentsAPI
                 from src.core.herp.async_candidates import AsyncCandidaciesAPI
                 from src.core.herp.async_contacts import AsyncContactsAPI
-                from src.core.herp.async_files import AsyncFilesAPI
                 from src.core.herp.async_evaluations import AsyncEvaluationsAPI
-                from src.core.herp.async_assignments import AsyncAssignmentsAPI
-                from src.core.herp.async_timeline import AsyncTimelineAPI
+                from src.core.herp.async_files import AsyncFilesAPI
                 from src.core.herp.async_master_data import AsyncMasterDataAPI
+                from src.core.herp.async_timeline import AsyncTimelineAPI
 
                 assert isinstance(client.candidacies, AsyncCandidaciesAPI)
                 assert isinstance(client.contacts, AsyncContactsAPI)

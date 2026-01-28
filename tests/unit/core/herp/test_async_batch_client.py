@@ -2,8 +2,9 @@
 Tests for HERP Async Batch Client
 """
 
-import pytest
 from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
 
 from src.core.herp.async_batch_client import AsyncBatchHerpClient, AsyncBatchResult
 from src.core.utils.config import HerpConfig

@@ -2,8 +2,9 @@
 Tests for HERP Async Assignments API Client
 """
 
-import pytest
 from unittest.mock import AsyncMock
+
+import pytest
 
 from src.core.herp.async_assignments import AsyncAssignmentsAPI
 
