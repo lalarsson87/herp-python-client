@@ -289,7 +289,7 @@ def calculate_backoff(
     if jitter:
         delay = delay * (0.5 + random.random() * 0.5)
 
-    return delay
+    return float(delay)
 
 
 def smart_retry(
