@@ -11,7 +11,7 @@ logger = get_logger(__name__)
 
 
 @lru_cache(maxsize=128)
-def _get_schema_fields(schema_class: Type[TypedDict]) -> frozenset:
+def _get_schema_fields(schema_class: type) -> frozenset:
     """
     Extract field names from TypedDict schema (cached for performance)
 
@@ -36,7 +36,7 @@ def _get_schema_fields(schema_class: Type[TypedDict]) -> frozenset:
 
 def _validate_dict(
     data: Dict[str, Any],
-    schema_class: Type[TypedDict],
+    schema_class: type,
     strict: bool = True,
 ) -> Dict[str, Any]:
     """
