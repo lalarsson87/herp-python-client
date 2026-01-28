@@ -68,6 +68,7 @@ logs/
 *.sqlite
 *.sqlite3
 data/
+docs/archive/test-data/
 !tests/fixtures/*.json
 !.claude/mcp-servers.json
 
