@@ -6,7 +6,7 @@ Handles all candidacy-related operations including listing, searching,
 creating, updating, and managing candidate hiring stages.
 """
 
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterator, List, Optional
 
 from ..utils.logging import get_logger
 from ..utils.validators import validate_list_response, validate_response
@@ -125,6 +125,53 @@ class CandidaciesAPI:
             updated_since=updated_since, limit=limit, max_pages=max_pages
         )
         return paginator.fetch_all()
+
+    def stream(
+        self,
+        updated_since: Optional[str] = None,
+        chunk_size: int = 100,
+        max_pages: Optional[int] = None,
+    ) -> Iterator[Dict[str, Any]]:
+        """
+        Stream candidacies one at a time (memory efficient)
+
+        Alias for iter() with clearer intent for streaming use cases.
+        Processes large datasets without loading all data into memory.
+
+        Args:
+            updated_since: ISO 8601 datetime to fetch only updated records
+            chunk_size: Items per page/chunk (default: 100)
+            max_pages: Maximum pages to fetch (None = unlimited)
+
+        Yields:
+            Individual candidacy records
+
+        Example:
+            >>> # Process 100,000 candidacies with constant memory usage
+            >>> for candidacy in client.candidacies.stream():
+            ...     process_candidacy(candidacy)
+            ...     # Memory usage stays constant regardless of total count
+
+            >>> # Stream recent updates
+            >>> for candidacy in client.candidacies.stream(
+            ...     updated_since="2026-01-20T00:00:00Z"
+            ... ):
+            ...     sync_to_database(candidacy)
+
+        Note:
+            This method yields items one at a time, making it ideal for:
+            - Large dataset processing (10,000+ records)
+            - ETL pipelines
+            - Streaming data to other systems
+            - Memory-constrained environments
+
+            Memory usage is O(chunk_size) instead of O(total_records).
+        """
+        return self.iter(
+            updated_since=updated_since,
+            limit=chunk_size,
+            max_pages=max_pages,
+        )
 
     def search(
         self,

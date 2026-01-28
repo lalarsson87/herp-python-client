@@ -171,6 +171,51 @@ class AsyncCandidaciesAPI:
             results.append(candidacy)
         return results
 
+    def astream(
+        self,
+        updated_since: Optional[str] = None,
+        chunk_size: int = 100,
+        max_pages: Optional[int] = None,
+    ) -> AsyncHerpPaginator:
+        """
+        Stream candidacies asynchronously (memory efficient)
+
+        Alias for iter() with clearer intent for streaming use cases.
+        Enables async iteration over large datasets without loading
+        all data into memory.
+
+        Args:
+            updated_since: ISO 8601 datetime to fetch only updated records
+            chunk_size: Items per page/chunk (default: 100)
+            max_pages: Maximum pages to fetch (None = unlimited)
+
+        Returns:
+            AsyncHerpPaginator for async iteration
+
+        Example:
+            >>> # Process large datasets efficiently
+            >>> async for candidacy in client.candidacies.astream():
+            ...     await process_candidacy(candidacy)
+            ...     # Constant memory usage regardless of total count
+
+            >>> # Stream with concurrent processing
+            >>> async for candidacy in client.candidacies.astream(chunk_size=50):
+            ...     asyncio.create_task(sync_to_notion(candidacy))
+
+        Note:
+            Memory usage is O(chunk_size) instead of O(total_records).
+            Ideal for:
+            - Large dataset processing (10,000+ records)
+            - Async ETL pipelines
+            - Real-time data streaming
+            - Memory-constrained environments
+        """
+        return self.iter(
+            updated_since=updated_since,
+            limit=chunk_size,
+            max_pages=max_pages,
+        )
+
     async def search(
         self,
         query: Optional[Query] = None,
