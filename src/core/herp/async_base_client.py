@@ -143,13 +143,10 @@ class AsyncHerpBaseClient:
     def _get_headers(self) -> Dict[str, str]:
         """Get request headers with authentication"""
         headers = {
-            "Authorization": f"Bearer {self.config.api_token}",
-            "User-Agent": self.config.user_agent,
+            "Authorization": f"Bearer {self.config.api_key}",
+            "User-Agent": "herp-python-client/1.0.0",
             "Accept": "application/json",
         }
-
-        if self.config.custom_headers:
-            headers.update(self.config.custom_headers)
 
         return headers
 
@@ -191,9 +188,7 @@ class AsyncHerpBaseClient:
             response = await self._client.request(method, endpoint, **kwargs)
 
             # Update rate limiter with response headers
-            if "x-remaining-requests" in response.headers:
-                remaining = int(response.headers["x-remaining-requests"])
-                self.rate_limiter.update_from_response(remaining)
+            self.rate_limiter.update_from_headers(response.headers)
 
             # Record success metric
             duration = (datetime.now() - start_time).total_seconds()

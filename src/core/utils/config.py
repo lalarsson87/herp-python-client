@@ -32,6 +32,7 @@ class HerpConfig:
     api_key: str
     base_url: str
     rate_limit: int = 100  # requests per minute
+    timeout: int = 30  # request timeout in seconds
 
     @property
     def rate_limit_delay(self) -> float:
@@ -168,6 +169,7 @@ def load_herp_config() -> HerpConfig:
     Optional environment variables:
     - HERP_API_BASE_URL: HERP API base URL (default: https://public-api.herp.cloud/hire/public)
     - HERP_RATE_LIMIT: Rate limit in requests/minute (default: 100)
+    - HERP_TIMEOUT: Request timeout in seconds (default: 30)
 
     Returns:
         HerpConfig instance
@@ -185,8 +187,11 @@ def load_herp_config() -> HerpConfig:
     )
 
     rate_limit = int(os.getenv("HERP_RATE_LIMIT", "100"))
+    timeout = int(os.getenv("HERP_TIMEOUT", "30"))
 
-    return HerpConfig(api_key=api_key, base_url=base_url, rate_limit=rate_limit)
+    return HerpConfig(
+        api_key=api_key, base_url=base_url, rate_limit=rate_limit, timeout=timeout
+    )
 
 
 def load_notion_config() -> NotionConfig:
