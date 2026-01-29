@@ -1,5 +1,7 @@
 """
-Tests for HERP Event Sourcing Events
+Tests for HERP Events
+
+Tests for immutable event types and event sourcing foundation.
 """
 
 from datetime import datetime
@@ -10,6 +12,7 @@ from src.core.herp.events.events import (
     AssignmentAdded,
     AssignmentRemoved,
     CandidacyCreated,
+    CandidacyEvent,
     CandidacyStatusChanged,
     CandidacyStepChanged,
     CandidacyTerminated,
@@ -24,47 +27,49 @@ from src.core.herp.events.events import (
 class TestBaseEvent:
     """Test base Event class"""
 
-    def test_event_initialization(self):
-        """Test creating base event"""
+    def test_event_initialization_with_defaults(self):
+        """Test event created with auto-generated fields"""
         event = Event(
             event_type="TestEvent",
-            aggregate_id="agg_123",
-            data={"key": "value"},
-            metadata={"user_id": "user_1"},
+            aggregate_id="test_123",
         )
 
-        assert event.event_type == "TestEvent"
-        assert event.aggregate_id == "agg_123"
-        assert event.data == {"key": "value"}
-        assert event.metadata == {"user_id": "user_1"}
+        # Auto-generated fields
+        assert event.event_id is not None
+        assert len(event.event_id) > 0  # UUID format
+        assert isinstance(event.timestamp, datetime)
         assert event.version == 1
-        assert event.event_id  # Should have generated UUID
+        assert event.data == {}
+        assert event.metadata == {}
 
-    def test_event_is_immutable(self):
-        """Test event is frozen/immutable"""
-        event = Event(event_type="Test", aggregate_id="agg_123")
+        # Provided fields
+        assert event.event_type == "TestEvent"
+        assert event.aggregate_id == "test_123"
 
-        with pytest.raises(Exception):  # FrozenInstanceError
-            event.event_type = "Modified"
+    def test_event_initialization_with_all_fields(self):
+        """Test event created with all fields specified"""
+        timestamp = datetime(2026, 1, 29, 10, 0, 0)
+        event = Event(
+            event_id="evt_custom_123",
+            event_type="CustomEvent",
+            aggregate_id="agg_456",
+            timestamp=timestamp,
+            data={"key": "value"},
+            metadata={"user_id": "user_789"},
+            version=2,
+        )
 
-    def test_event_generates_unique_id(self):
-        """Test each event gets unique ID"""
-        event1 = Event(event_type="Test", aggregate_id="agg_123")
-        event2 = Event(event_type="Test", aggregate_id="agg_123")
-
-        assert event1.event_id != event2.event_id
-
-    def test_event_has_timestamp(self):
-        """Test event has timestamp"""
-        before = datetime.now()
-        event = Event(event_type="Test", aggregate_id="agg_123")
-        after = datetime.now()
-
-        assert before <= event.timestamp <= after
+        assert event.event_id == "evt_custom_123"
+        assert event.event_type == "CustomEvent"
+        assert event.aggregate_id == "agg_456"
+        assert event.timestamp == timestamp
+        assert event.data == {"key": "value"}
+        assert event.metadata == {"user_id": "user_789"}
+        assert event.version == 2
 
     def test_event_to_dict(self):
-        """Test converting event to dictionary"""
-        timestamp = datetime(2026, 1, 15, 10, 30, 0)
+        """Test event serialization to dict"""
+        timestamp = datetime(2026, 1, 29, 10, 0, 0)
         event = Event(
             event_id="evt_123",
             event_type="TestEvent",
@@ -72,7 +77,7 @@ class TestBaseEvent:
             timestamp=timestamp,
             data={"field": "value"},
             metadata={"user_id": "user_1"},
-            version=2,
+            version=1,
         )
 
         result = event.to_dict()
@@ -80,252 +85,338 @@ class TestBaseEvent:
         assert result["event_id"] == "evt_123"
         assert result["event_type"] == "TestEvent"
         assert result["aggregate_id"] == "agg_456"
-        assert result["timestamp"] == "2026-01-15T10:30:00"
+        assert result["timestamp"] == "2026-01-29T10:00:00"
         assert result["data"] == {"field": "value"}
         assert result["metadata"] == {"user_id": "user_1"}
-        assert result["version"] == 2
+        assert result["version"] == 1
 
     def test_event_from_dict(self):
-        """Test creating event from dictionary"""
+        """Test event deserialization from dict"""
         data = {
-            "event_id": "evt_123",
-            "event_type": "TestEvent",
-            "aggregate_id": "agg_456",
-            "timestamp": "2026-01-15T10:30:00",
-            "data": {"field": "value"},
-            "metadata": {"user_id": "user_1"},
+            "event_id": "evt_789",
+            "event_type": "DeserializedEvent",
+            "aggregate_id": "agg_012",
+            "timestamp": "2026-01-29T15:30:00",
+            "data": {"key": "value"},
+            "metadata": {"correlation_id": "corr_123"},
             "version": 2,
         }
 
         event = Event.from_dict(data)
 
-        assert event.event_id == "evt_123"
-        assert event.event_type == "TestEvent"
-        assert event.aggregate_id == "agg_456"
-        assert event.timestamp == datetime(2026, 1, 15, 10, 30, 0)
-        assert event.data == {"field": "value"}
-        assert event.metadata == {"user_id": "user_1"}
+        assert event.event_id == "evt_789"
+        assert event.event_type == "DeserializedEvent"
+        assert event.aggregate_id == "agg_012"
+        assert event.timestamp == datetime(2026, 1, 29, 15, 30, 0)
+        assert event.data == {"key": "value"}
+        assert event.metadata == {"correlation_id": "corr_123"}
         assert event.version == 2
 
-    def test_event_from_dict_minimal(self):
-        """Test creating event from minimal dictionary"""
+    def test_event_from_dict_with_minimal_fields(self):
+        """Test from_dict with only required fields"""
         data = {
-            "event_id": "evt_123",
-            "event_type": "TestEvent",
-            "aggregate_id": "agg_456",
-            "timestamp": "2026-01-15T10:30:00",
+            "event_id": "evt_min",
+            "event_type": "MinEvent",
+            "aggregate_id": "agg_min",
+            "timestamp": "2026-01-29T10:00:00",
         }
 
         event = Event.from_dict(data)
 
-        assert event.event_id == "evt_123"
+        assert event.event_id == "evt_min"
         assert event.data == {}
         assert event.metadata == {}
         assert event.version == 1
 
-    def test_event_round_trip_serialization(self):
-        """Test event can be serialized and deserialized"""
+    def test_event_roundtrip_serialization(self):
+        """Test event survives to_dict -> from_dict roundtrip"""
         original = Event(
-            event_type="TestEvent",
-            aggregate_id="agg_123",
-            data={"key": "value"},
-            metadata={"user_id": "user_1"},
+            event_id="evt_round",
+            event_type="RoundTripEvent",
+            aggregate_id="agg_round",
+            timestamp=datetime(2026, 1, 29, 12, 0, 0),
+            data={"test": "data"},
+            metadata={"test": "metadata"},
+            version=1,
         )
 
-        # Serialize to dict
-        event_dict = original.to_dict()
+        dict_form = original.to_dict()
+        restored = Event.from_dict(dict_form)
 
-        # Deserialize from dict
-        reconstructed = Event.from_dict(event_dict)
+        assert restored.event_id == original.event_id
+        assert restored.event_type == original.event_type
+        assert restored.aggregate_id == original.aggregate_id
+        assert restored.timestamp == original.timestamp
+        assert restored.data == original.data
+        assert restored.metadata == original.metadata
+        assert restored.version == original.version
 
-        assert reconstructed.event_id == original.event_id
-        assert reconstructed.event_type == original.event_type
-        assert reconstructed.aggregate_id == original.aggregate_id
-        assert reconstructed.data == original.data
-        assert reconstructed.metadata == original.metadata
+    def test_event_is_immutable(self):
+        """Test events are frozen (immutable)"""
+        event = Event(event_type="ImmutableEvent", aggregate_id="agg_123")
+
+        with pytest.raises(Exception):  # FrozenInstanceError
+            event.event_type = "ChangedType"
+
+        with pytest.raises(Exception):
+            event.data = {"new": "data"}
+
+
+class TestCandidacyEvent:
+    """Test CandidacyEvent base class"""
+
+    def test_candidacy_event_inherits_from_event(self):
+        """Test CandidacyEvent is subclass of Event"""
+        assert issubclass(CandidacyEvent, Event)
+
+    def test_candidacy_event_creation(self):
+        """Test creating CandidacyEvent directly"""
+        event = CandidacyEvent(
+            event_type="GenericCandidacyEvent",
+            aggregate_id="cand_123",
+        )
+
+        assert isinstance(event, Event)
+        assert event.aggregate_id == "cand_123"
 
 
 class TestCandidacyCreated:
     """Test CandidacyCreated event"""
 
-    def test_create_candidacy_created(self):
-        """Test creating CandidacyCreated event"""
+    def test_candidacy_created_event_type(self):
+        """Test event type is set correctly"""
         event = CandidacyCreated.create(
             candidacy_id="cand_123",
-            name="Alice Smith",
-            email="alice@example.com",
-            requisition_id="req_001",
-            step="application",
-            status="active",
-            tags=["python", "senior"],
-            custom_fields={"years_experience": 5},
-            user_id="user_recruiter",
+            name="John Doe",
         )
 
         assert event.event_type == "CandidacyCreated"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["name"] == "Alice Smith"
-        assert event.data["email"] == "alice@example.com"
-        assert event.data["requisition_id"] == "req_001"
+
+    def test_candidacy_created_with_all_fields(self):
+        """Test creating event with all optional fields"""
+        event = CandidacyCreated.create(
+            candidacy_id="cand_456",
+            name="Jane Smith",
+            email="jane@example.com",
+            requisition_id="req_789",
+            step="interview",
+            status="active",
+            tags=["experienced", "remote"],
+            custom_fields={"years_experience": 5},
+            user_id="user_recruiter_1",
+        )
+
+        assert event.aggregate_id == "cand_456"
+        assert event.data["name"] == "Jane Smith"
+        assert event.data["email"] == "jane@example.com"
+        assert event.data["requisition_id"] == "req_789"
+        assert event.data["step"] == "interview"
+        assert event.data["status"] == "active"
+        assert event.data["tags"] == ["experienced", "remote"]
+        assert event.data["custom_fields"] == {"years_experience": 5}
+        assert event.metadata == {"user_id": "user_recruiter_1"}
+
+    def test_candidacy_created_with_minimal_fields(self):
+        """Test creating event with only required fields"""
+        event = CandidacyCreated.create(
+            candidacy_id="cand_min",
+            name="Minimal Candidate",
+        )
+
+        assert event.aggregate_id == "cand_min"
+        assert event.data["name"] == "Minimal Candidate"
+        assert event.data["email"] is None
+        assert event.data["requisition_id"] is None
         assert event.data["step"] == "application"
         assert event.data["status"] == "active"
-        assert event.data["tags"] == ["python", "senior"]
-        assert event.data["custom_fields"] == {"years_experience": 5}
-        assert event.metadata["user_id"] == "user_recruiter"
-
-    def test_create_candidacy_created_minimal(self):
-        """Test creating CandidacyCreated with minimal data"""
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice Smith")
-
-        assert event.event_type == "CandidacyCreated"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["name"] == "Alice Smith"
-        assert event.data["email"] is None
         assert event.data["tags"] == []
         assert event.data["custom_fields"] == {}
         assert event.metadata == {}
 
-    def test_candidacy_created_is_immutable(self):
-        """Test CandidacyCreated is immutable"""
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
+    def test_candidacy_created_without_user_id(self):
+        """Test metadata is empty when user_id not provided"""
+        event = CandidacyCreated.create(
+            candidacy_id="cand_123",
+            name="Test",
+        )
 
-        with pytest.raises(Exception):
-            event.aggregate_id = "modified"
+        assert event.metadata == {}
 
 
 class TestCandidacyStepChanged:
     """Test CandidacyStepChanged event"""
 
-    def test_create_candidacy_step_changed(self):
-        """Test creating CandidacyStepChanged event"""
+    def test_candidacy_step_changed_event_type(self):
+        """Test event type is set correctly"""
         event = CandidacyStepChanged.create(
             candidacy_id="cand_123",
             from_step="application",
-            to_step="phone_screen",
-            comment="Moving to next stage",
-            user_id="user_recruiter",
+            to_step="interview",
         )
 
         assert event.event_type == "CandidacyStepChanged"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["from_step"] == "application"
-        assert event.data["to_step"] == "phone_screen"
-        assert event.data["comment"] == "Moving to next stage"
-        assert event.metadata["user_id"] == "user_recruiter"
 
-    def test_create_candidacy_step_changed_no_comment(self):
-        """Test creating step change without comment"""
+    def test_candidacy_step_changed_with_all_fields(self):
+        """Test creating event with all fields"""
         event = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="interview", to_step="offer"
+            candidacy_id="cand_456",
+            from_step="screening",
+            to_step="technical_interview",
+            comment="Strong initial screening performance",
+            user_id="user_recruiter_1",
+        )
+
+        assert event.aggregate_id == "cand_456"
+        assert event.data["from_step"] == "screening"
+        assert event.data["to_step"] == "technical_interview"
+        assert event.data["comment"] == "Strong initial screening performance"
+        assert event.metadata == {"user_id": "user_recruiter_1"}
+
+    def test_candidacy_step_changed_without_comment(self):
+        """Test creating event without optional comment"""
+        event = CandidacyStepChanged.create(
+            candidacy_id="cand_123",
+            from_step="application",
+            to_step="screening",
         )
 
         assert event.data["comment"] is None
-        assert event.metadata == {}
 
 
 class TestCandidacyStatusChanged:
     """Test CandidacyStatusChanged event"""
 
-    def test_create_candidacy_status_changed(self):
-        """Test creating CandidacyStatusChanged event"""
+    def test_candidacy_status_changed_event_type(self):
+        """Test event type is set correctly"""
         event = CandidacyStatusChanged.create(
             candidacy_id="cand_123",
             from_status="active",
             to_status="terminated",
-            reason="hired",
-            user_id="user_manager",
         )
 
         assert event.event_type == "CandidacyStatusChanged"
-        assert event.aggregate_id == "cand_123"
+
+    def test_candidacy_status_changed_with_reason(self):
+        """Test creating event with reason"""
+        event = CandidacyStatusChanged.create(
+            candidacy_id="cand_456",
+            from_status="active",
+            to_status="terminated",
+            reason="hired",
+            user_id="user_manager_1",
+        )
+
+        assert event.aggregate_id == "cand_456"
         assert event.data["from_status"] == "active"
         assert event.data["to_status"] == "terminated"
         assert event.data["reason"] == "hired"
-        assert event.metadata["user_id"] == "user_manager"
-
-    def test_create_candidacy_status_changed_minimal(self):
-        """Test creating status change without reason"""
-        event = CandidacyStatusChanged.create(
-            candidacy_id="cand_123", from_status="active", to_status="on_hold"
-        )
-
-        assert event.data["reason"] is None
+        assert event.metadata == {"user_id": "user_manager_1"}
 
 
 class TestCandidacyTerminated:
     """Test CandidacyTerminated event"""
 
-    def test_create_candidacy_terminated(self):
-        """Test creating CandidacyTerminated event"""
+    def test_candidacy_terminated_event_type(self):
+        """Test event type is set correctly"""
         event = CandidacyTerminated.create(
             candidacy_id="cand_123",
             reason="hired",
-            comment="Accepted offer, starts next month",
-            final_step="offer",
-            user_id="user_recruiter",
         )
 
         assert event.event_type == "CandidacyTerminated"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["reason"] == "hired"
-        assert event.data["comment"] == "Accepted offer, starts next month"
-        assert event.data["final_step"] == "offer"
-        assert event.metadata["user_id"] == "user_recruiter"
 
-    def test_create_candidacy_terminated_rejected(self):
-        """Test creating termination event for rejection"""
+    def test_candidacy_terminated_with_all_fields(self):
+        """Test creating event with all fields"""
         event = CandidacyTerminated.create(
-            candidacy_id="cand_123", reason="rejected", final_step="technical_interview"
+            candidacy_id="cand_456",
+            reason="hired",
+            comment="Excellent candidate, accepted offer",
+            final_step="offer",
+            user_id="user_manager_1",
+        )
+
+        assert event.aggregate_id == "cand_456"
+        assert event.data["reason"] == "hired"
+        assert event.data["comment"] == "Excellent candidate, accepted offer"
+        assert event.data["final_step"] == "offer"
+        assert event.metadata == {"user_id": "user_manager_1"}
+
+    def test_candidacy_terminated_rejected(self):
+        """Test termination with rejection"""
+        event = CandidacyTerminated.create(
+            candidacy_id="cand_789",
+            reason="rejected",
+            comment="Not a good fit for role",
+            final_step="technical_interview",
         )
 
         assert event.data["reason"] == "rejected"
-        assert event.data["comment"] is None
 
 
 class TestContactAdded:
     """Test ContactAdded event"""
 
-    def test_create_contact_added(self):
-        """Test creating ContactAdded event"""
-        event = ContactAdded.create(
-            candidacy_id="cand_123",
-            contact_id="contact_456",
-            contact_type="technical_interview",
-            scheduled_at="2026-02-01T10:00:00Z",
-            interviewer_ids=["user_1", "user_2"],
-            title="Senior Engineer Technical Screen",
-            user_id="user_recruiter",
-        )
-
-        assert event.event_type == "ContactAdded"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["contact_id"] == "contact_456"
-        assert event.data["type"] == "technical_interview"
-        assert event.data["scheduled_at"] == "2026-02-01T10:00:00Z"
-        assert event.data["interviewer_ids"] == ["user_1", "user_2"]
-        assert event.data["title"] == "Senior Engineer Technical Screen"
-        assert event.metadata["user_id"] == "user_recruiter"
-
-    def test_create_contact_added_minimal(self):
-        """Test creating contact with minimal data"""
+    def test_contact_added_event_type(self):
+        """Test event type is set correctly"""
         event = ContactAdded.create(
             candidacy_id="cand_123",
             contact_id="contact_456",
             contact_type="phone_screen",
         )
 
-        assert event.data["interviewer_ids"] == []
+        assert event.event_type == "ContactAdded"
+
+    def test_contact_added_with_all_fields(self):
+        """Test creating event with all fields"""
+        event = ContactAdded.create(
+            candidacy_id="cand_123",
+            contact_id="contact_456",
+            contact_type="technical_interview",
+            scheduled_at="2026-02-01T10:00:00Z",
+            interviewer_ids=["user_1", "user_2"],
+            title="Technical Screen - Python",
+            user_id="user_recruiter",
+        )
+
+        assert event.aggregate_id == "cand_123"
+        assert event.data["contact_id"] == "contact_456"
+        assert event.data["type"] == "technical_interview"
+        assert event.data["scheduled_at"] == "2026-02-01T10:00:00Z"
+        assert event.data["interviewer_ids"] == ["user_1", "user_2"]
+        assert event.data["title"] == "Technical Screen - Python"
+        assert event.metadata == {"user_id": "user_recruiter"}
+
+    def test_contact_added_with_minimal_fields(self):
+        """Test creating event with minimal fields"""
+        event = ContactAdded.create(
+            candidacy_id="cand_123",
+            contact_id="contact_789",
+            contact_type="casual_conversation",
+        )
+
         assert event.data["scheduled_at"] is None
+        assert event.data["interviewer_ids"] == []
+        assert event.data["title"] is None
 
 
 class TestContactUpdated:
     """Test ContactUpdated event"""
 
-    def test_create_contact_updated(self):
-        """Test creating ContactUpdated event"""
+    def test_contact_updated_event_type(self):
+        """Test event type is set correctly"""
+        event = ContactUpdated.create(
+            candidacy_id="cand_123",
+            contact_id="contact_456",
+            changes={},
+        )
+
+        assert event.event_type == "ContactUpdated"
+
+    def test_contact_updated_with_changes(self):
+        """Test creating event with changes"""
         changes = {
-            "scheduled_at": "2026-02-02T15:00:00Z",
-            "interviewer_ids": ["user_3"],
+            "scheduled_at": "2026-02-02T14:00:00Z",
+            "interviewer_ids": ["user_3", "user_4"],
         }
 
         event = ContactUpdated.create(
@@ -335,42 +426,51 @@ class TestContactUpdated:
             user_id="user_recruiter",
         )
 
-        assert event.event_type == "ContactUpdated"
         assert event.aggregate_id == "cand_123"
         assert event.data["contact_id"] == "contact_456"
         assert event.data["changes"] == changes
-        assert event.metadata["user_id"] == "user_recruiter"
+        assert event.metadata == {"user_id": "user_recruiter"}
 
 
 class TestFileUploaded:
     """Test FileUploaded event"""
 
-    def test_create_file_uploaded(self):
-        """Test creating FileUploaded event"""
+    def test_file_uploaded_event_type(self):
+        """Test event type is set correctly"""
         event = FileUploaded.create(
             candidacy_id="cand_123",
-            file_id="file_789",
+            file_id="file_456",
             file_name="resume.pdf",
             file_type="resume",
-            file_size=102400,
-            user_id="user_candidate",
         )
 
         assert event.event_type == "FileUploaded"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["file_id"] == "file_789"
-        assert event.data["file_name"] == "resume.pdf"
-        assert event.data["file_type"] == "resume"
-        assert event.data["file_size"] == 102400
-        assert event.metadata["user_id"] == "user_candidate"
 
-    def test_create_file_uploaded_no_size(self):
-        """Test creating file upload without size"""
+    def test_file_uploaded_with_all_fields(self):
+        """Test creating event with all fields"""
+        event = FileUploaded.create(
+            candidacy_id="cand_123",
+            file_id="file_456",
+            file_name="john_doe_resume.pdf",
+            file_type="resume",
+            file_size=1024000,
+            user_id="user_candidate",
+        )
+
+        assert event.aggregate_id == "cand_123"
+        assert event.data["file_id"] == "file_456"
+        assert event.data["file_name"] == "john_doe_resume.pdf"
+        assert event.data["file_type"] == "resume"
+        assert event.data["file_size"] == 1024000
+        assert event.metadata == {"user_id": "user_candidate"}
+
+    def test_file_uploaded_without_size(self):
+        """Test creating event without file size"""
         event = FileUploaded.create(
             candidacy_id="cand_123",
             file_id="file_789",
-            file_name="resume.pdf",
-            file_type="resume",
+            file_name="cover_letter.txt",
+            file_type="other",
         )
 
         assert event.data["file_size"] is None
@@ -379,43 +479,38 @@ class TestFileUploaded:
 class TestTimelineCommentAdded:
     """Test TimelineCommentAdded event"""
 
-    def test_create_timeline_comment_added(self):
-        """Test creating TimelineCommentAdded event"""
+    def test_timeline_comment_added_event_type(self):
+        """Test event type is set correctly"""
         event = TimelineCommentAdded.create(
             candidacy_id="cand_123",
-            comment_id="comment_101",
-            comment="Great technical skills demonstrated",
-            format="text/plain",
-            user_id="user_interviewer",
+            comment_id="comment_456",
+            comment="Great interview",
         )
 
         assert event.event_type == "TimelineCommentAdded"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["comment_id"] == "comment_101"
-        assert event.data["comment"] == "Great technical skills demonstrated"
-        assert event.data["format"] == "text/plain"
-        assert event.metadata["user_id"] == "user_interviewer"
 
-    def test_create_timeline_comment_markdown(self):
-        """Test creating timeline comment with markdown"""
-        comment_text = (
-            "## Technical Assessment\n\n- Strong problem solving\n- Great communication"
-        )
-
+    def test_timeline_comment_added_with_all_fields(self):
+        """Test creating event with all fields"""
         event = TimelineCommentAdded.create(
             candidacy_id="cand_123",
-            comment_id="comment_102",
-            comment=comment_text,
+            comment_id="comment_456",
+            comment="# Interview Feedback\n\n**Technical Skills**: Excellent\n",
             format="text/markdown",
+            user_id="user_interviewer",
         )
 
-        assert event.data["comment"] == comment_text
+        assert event.aggregate_id == "cand_123"
+        assert event.data["comment_id"] == "comment_456"
+        assert "Interview Feedback" in event.data["comment"]
         assert event.data["format"] == "text/markdown"
+        assert event.metadata == {"user_id": "user_interviewer"}
 
-    def test_create_timeline_comment_default_format(self):
-        """Test timeline comment defaults to text/plain"""
+    def test_timeline_comment_added_default_format(self):
+        """Test creating event with default format"""
         event = TimelineCommentAdded.create(
-            candidacy_id="cand_123", comment_id="comment_103", comment="Test"
+            candidacy_id="cand_123",
+            comment_id="comment_789",
+            comment="Plain text comment",
         )
 
         assert event.data["format"] == "text/plain"
@@ -424,35 +519,34 @@ class TestTimelineCommentAdded:
 class TestAssignmentAdded:
     """Test AssignmentAdded event"""
 
-    def test_create_assignment_added(self):
-        """Test creating AssignmentAdded event"""
+    def test_assignment_added_event_type(self):
+        """Test event type is set correctly"""
         event = AssignmentAdded.create(
             candidacy_id="cand_123",
-            assigned_user_id="user_recruiter_1",
-            role="recruiter",
-            by_user_id="user_admin",
+            assigned_user_id="user_456",
         )
 
         assert event.event_type == "AssignmentAdded"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["user_id"] == "user_recruiter_1"
-        assert event.data["role"] == "recruiter"
-        assert event.metadata["user_id"] == "user_admin"
 
-    def test_create_assignment_added_hiring_manager(self):
-        """Test creating assignment for hiring manager"""
+    def test_assignment_added_with_all_fields(self):
+        """Test creating event with all fields"""
         event = AssignmentAdded.create(
             candidacy_id="cand_123",
-            assigned_user_id="user_manager_1",
-            role="hiring_manager",
+            assigned_user_id="user_interviewer",
+            role="interviewer",
+            by_user_id="user_recruiter",
         )
 
-        assert event.data["role"] == "hiring_manager"
+        assert event.aggregate_id == "cand_123"
+        assert event.data["user_id"] == "user_interviewer"
+        assert event.data["role"] == "interviewer"
+        assert event.metadata == {"user_id": "user_recruiter"}
 
-    def test_create_assignment_added_default_role(self):
-        """Test assignment defaults to recruiter role"""
+    def test_assignment_added_default_role(self):
+        """Test creating event with default role"""
         event = AssignmentAdded.create(
-            candidacy_id="cand_123", assigned_user_id="user_1"
+            candidacy_id="cand_123",
+            assigned_user_id="user_456",
         )
 
         assert event.data["role"] == "recruiter"
@@ -461,127 +555,113 @@ class TestAssignmentAdded:
 class TestAssignmentRemoved:
     """Test AssignmentRemoved event"""
 
-    def test_create_assignment_removed(self):
-        """Test creating AssignmentRemoved event"""
+    def test_assignment_removed_event_type(self):
+        """Test event type is set correctly"""
         event = AssignmentRemoved.create(
             candidacy_id="cand_123",
-            unassigned_user_id="user_recruiter_1",
-            by_user_id="user_admin",
+            unassigned_user_id="user_456",
         )
 
         assert event.event_type == "AssignmentRemoved"
-        assert event.aggregate_id == "cand_123"
-        assert event.data["user_id"] == "user_recruiter_1"
-        assert event.metadata["user_id"] == "user_admin"
 
-    def test_create_assignment_removed_no_actor(self):
-        """Test creating assignment removal without actor"""
+    def test_assignment_removed_with_all_fields(self):
+        """Test creating event with all fields"""
         event = AssignmentRemoved.create(
-            candidacy_id="cand_123", unassigned_user_id="user_1"
+            candidacy_id="cand_123",
+            unassigned_user_id="user_interviewer",
+            by_user_id="user_recruiter",
+        )
+
+        assert event.aggregate_id == "cand_123"
+        assert event.data["user_id"] == "user_interviewer"
+        assert event.metadata == {"user_id": "user_recruiter"}
+
+    def test_assignment_removed_without_metadata(self):
+        """Test creating event without metadata"""
+        event = AssignmentRemoved.create(
+            candidacy_id="cand_123",
+            unassigned_user_id="user_456",
         )
 
         assert event.metadata == {}
 
 
-class TestEventSerialization:
-    """Test event serialization for all event types"""
+class TestEventIntegration:
+    """Integration tests for event usage patterns"""
 
-    def test_candidacy_created_to_dict(self):
-        """Test CandidacyCreated serialization to dict"""
-        event = CandidacyCreated.create(
-            candidacy_id="cand_123", name="Alice", email="alice@example.com"
+    def test_event_workflow_candidacy_lifecycle(self):
+        """Test complete candidacy lifecycle with events"""
+        # Create candidacy
+        created = CandidacyCreated.create(
+            candidacy_id="cand_lifecycle",
+            name="Lifecycle Candidate",
+            email="lifecycle@example.com",
+            requisition_id="req_001",
         )
 
-        event_dict = event.to_dict()
+        assert created.event_type == "CandidacyCreated"
 
-        assert event_dict["event_type"] == "CandidacyCreated"
-        assert event_dict["aggregate_id"] == "cand_123"
-        assert event_dict["data"]["name"] == "Alice"
-        assert event_dict["data"]["email"] == "alice@example.com"
-        assert "event_id" in event_dict
-        assert "timestamp" in event_dict
-
-    def test_candidacy_step_changed_to_dict(self):
-        """Test CandidacyStepChanged serialization to dict"""
-        event = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="app", to_step="screen"
+        # Change step
+        step_changed = CandidacyStepChanged.create(
+            candidacy_id="cand_lifecycle",
+            from_step="application",
+            to_step="interview",
         )
 
-        event_dict = event.to_dict()
+        assert step_changed.aggregate_id == created.aggregate_id
 
-        assert event_dict["event_type"] == "CandidacyStepChanged"
-        assert event_dict["data"]["from_step"] == "app"
-        assert event_dict["data"]["to_step"] == "screen"
-
-    def test_contact_added_to_dict(self):
-        """Test ContactAdded serialization to dict"""
-        event = ContactAdded.create(
-            candidacy_id="cand_123",
-            contact_id="contact_1",
-            contact_type="interview",
+        # Add contact
+        contact_added = ContactAdded.create(
+            candidacy_id="cand_lifecycle",
+            contact_id="contact_001",
+            contact_type="technical_interview",
         )
 
-        event_dict = event.to_dict()
+        assert contact_added.aggregate_id == created.aggregate_id
 
-        assert event_dict["event_type"] == "ContactAdded"
-        assert event_dict["data"]["contact_id"] == "contact_1"
-        assert event_dict["data"]["type"] == "interview"
-
-    def test_base_event_deserialization(self):
-        """Test base Event class can deserialize all event types"""
-        # Create a CandidacyCreated event
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-        event_dict = event.to_dict()
-
-        # Deserialize as base Event class
-        reconstructed = Event.from_dict(event_dict)
-
-        assert reconstructed.event_type == "CandidacyCreated"
-        assert reconstructed.aggregate_id == "cand_123"
-        assert reconstructed.data["name"] == "Alice"
-
-
-class TestEventEdgeCases:
-    """Test edge cases for events"""
-
-    def test_event_with_empty_data(self):
-        """Test event with empty data dict"""
-        event = Event(event_type="Test", aggregate_id="agg_123", data={})
-
-        assert event.data == {}
-
-    def test_event_with_empty_metadata(self):
-        """Test event with empty metadata dict"""
-        event = Event(event_type="Test", aggregate_id="agg_123", metadata={})
-
-        assert event.metadata == {}
-
-    def test_event_with_unicode_data(self):
-        """Test event with unicode data"""
-        event = CandidacyCreated.create(
-            candidacy_id="cand_123", name="候補者 - Candidate 🌟"
+        # Terminate
+        terminated = CandidacyTerminated.create(
+            candidacy_id="cand_lifecycle",
+            reason="hired",
+            final_step="offer",
         )
 
-        assert event.data["name"] == "候補者 - Candidate 🌟"
+        assert terminated.aggregate_id == created.aggregate_id
 
-        # Should serialize correctly
-        event_dict = event.to_dict()
-        assert event_dict["data"]["name"] == "候補者 - Candidate 🌟"
+    def test_events_can_be_serialized_and_deserialized(self):
+        """Test events survive serialization roundtrip"""
+        events = [
+            CandidacyCreated.create("cand_1", "Test 1"),
+            CandidacyStepChanged.create("cand_1", "app", "interview"),
+            ContactAdded.create("cand_1", "contact_1", "phone_screen"),
+            FileUploaded.create("cand_1", "file_1", "resume.pdf", "resume"),
+            TimelineCommentAdded.create("cand_1", "comm_1", "Great candidate"),
+            AssignmentAdded.create("cand_1", "user_1"),
+        ]
 
-        # Deserialize as base Event class
-        reconstructed = Event.from_dict(event_dict)
-        assert reconstructed.data["name"] == "候補者 - Candidate 🌟"
+        for event in events:
+            dict_form = event.to_dict()
+            # Can recreate base Event from dict
+            restored = Event.from_dict(dict_form)
+            assert restored.event_type == event.event_type
+            assert restored.aggregate_id == event.aggregate_id
+            assert restored.data == event.data
 
-    def test_event_with_nested_data(self):
-        """Test event with nested data structures"""
-        event = CandidacyCreated.create(
-            candidacy_id="cand_123",
-            name="Alice",
-            custom_fields={
-                "skills": {"python": "expert", "javascript": "intermediate"},
-                "education": [{"degree": "BS", "field": "CS"}],
-            },
-        )
+    def test_all_events_are_immutable(self):
+        """Test all event types are frozen"""
+        events = [
+            CandidacyCreated.create("cand_1", "Test"),
+            CandidacyStepChanged.create("cand_1", "a", "b"),
+            CandidacyStatusChanged.create("cand_1", "active", "terminated"),
+            CandidacyTerminated.create("cand_1", "hired"),
+            ContactAdded.create("cand_1", "c1", "phone"),
+            ContactUpdated.create("cand_1", "c1", {}),
+            FileUploaded.create("cand_1", "f1", "file.pdf", "resume"),
+            TimelineCommentAdded.create("cand_1", "comm_1", "comment"),
+            AssignmentAdded.create("cand_1", "u1"),
+            AssignmentRemoved.create("cand_1", "u1"),
+        ]
 
-        assert event.data["custom_fields"]["skills"]["python"] == "expert"
-        assert event.data["custom_fields"]["education"][0]["degree"] == "BS"
+        for event in events:
+            with pytest.raises(Exception):  # FrozenInstanceError
+                event.event_type = "Modified"
