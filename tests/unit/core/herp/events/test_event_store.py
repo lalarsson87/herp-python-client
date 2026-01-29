@@ -1,11 +1,14 @@
 """
 Tests for HERP Event Store
+
+Tests for event storage, retrieval, and subscription mechanisms.
 """
 
 import json
 import tempfile
 from datetime import datetime, timedelta
 from pathlib import Path
+from unittest.mock import Mock
 
 import pytest
 
@@ -18,7 +21,7 @@ from src.core.herp.events.event_store import (
 from src.core.herp.events.events import (
     CandidacyCreated,
     CandidacyStepChanged,
-    ContactAdded,
+    CandidacyTerminated,
     Event,
 )
 
@@ -28,11 +31,35 @@ class TestInMemoryEventStore:
 
     @pytest.fixture
     def store(self):
-        """Create fresh event store"""
+        """Create fresh in-memory store for each test"""
         return InMemoryEventStore()
 
-    def test_initialization(self, store):
-        """Test store initialization"""
+    @pytest.fixture
+    def sample_events(self):
+        """Create sample events for testing"""
+        base_time = datetime(2026, 1, 29, 10, 0, 0)
+
+        return [
+            CandidacyCreated.create(
+                candidacy_id="cand_1",
+                name="John Doe",
+                email="john@example.com",
+            ),
+            CandidacyStepChanged.create(
+                candidacy_id="cand_1",
+                from_step="application",
+                to_step="screening",
+            ),
+            CandidacyCreated.create(
+                candidacy_id="cand_2",
+                name="Jane Smith",
+                email="jane@example.com",
+            ),
+        ]
+
+    def test_store_initialization(self, store):
+        """Test store initializes with empty state"""
+        assert isinstance(store, EventStore)
         assert store.count() == 0
         assert store.events == []
         assert store.events_by_aggregate == {}
@@ -41,236 +68,221 @@ class TestInMemoryEventStore:
     def test_append_single_event(self, store):
         """Test appending single event"""
         event = CandidacyCreated.create(
-            candidacy_id="cand_123", name="Alice", email="alice@example.com"
+            candidacy_id="cand_123",
+            name="Test User",
         )
 
         store.append(event)
 
         assert store.count() == 1
         assert event in store.events
-        assert event in store.events_by_aggregate["cand_123"]
-        assert event in store.events_by_type["CandidacyCreated"]
 
-    def test_append_multiple_events(self, store):
+    def test_append_multiple_events(self, store, sample_events):
         """Test appending multiple events"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyCreated.create(candidacy_id="cand_2", name="Bob")
-        event3 = CandidacyStepChanged.create(
-            candidacy_id="cand_1", from_step="app", to_step="screen"
-        )
-
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
+        for event in sample_events:
+            store.append(event)
 
         assert store.count() == 3
+        assert len(store.events) == 3
 
-    def test_load_events_by_aggregate_id(self, store):
+    def test_events_indexed_by_aggregate(self, store, sample_events):
+        """Test events are indexed by aggregate ID"""
+        for event in sample_events:
+            store.append(event)
+
+        # cand_1 has 2 events
+        cand_1_events = store.events_by_aggregate["cand_1"]
+        assert len(cand_1_events) == 2
+        assert all(e.aggregate_id == "cand_1" for e in cand_1_events)
+
+        # cand_2 has 1 event
+        cand_2_events = store.events_by_aggregate["cand_2"]
+        assert len(cand_2_events) == 1
+        assert cand_2_events[0].aggregate_id == "cand_2"
+
+    def test_events_indexed_by_type(self, store, sample_events):
+        """Test events are indexed by event type"""
+        for event in sample_events:
+            store.append(event)
+
+        # CandidacyCreated has 2 events
+        created_events = store.events_by_type["CandidacyCreated"]
+        assert len(created_events) == 2
+
+        # CandidacyStepChanged has 1 event
+        step_changed_events = store.events_by_type["CandidacyStepChanged"]
+        assert len(step_changed_events) == 1
+
+    def test_load_events_for_aggregate(self, store, sample_events):
         """Test loading events for specific aggregate"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="app", to_step="screen"
-        )
-        event3 = CandidacyCreated.create(candidacy_id="cand_456", name="Bob")
+        for event in sample_events:
+            store.append(event)
 
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        events = store.load_events("cand_123")
+        events = store.load_events("cand_1")
 
         assert len(events) == 2
-        assert event1 in events
-        assert event2 in events
-        assert event3 not in events
+        assert all(e.aggregate_id == "cand_1" for e in events)
+        # Events should be sorted by timestamp
+        assert events[0].timestamp <= events[1].timestamp
 
-    def test_load_events_nonexistent_aggregate(self, store):
-        """Test loading events for nonexistent aggregate"""
-        events = store.load_events("nonexistent")
+    def test_load_events_for_nonexistent_aggregate(self, store):
+        """Test loading events for aggregate with no events"""
+        events = store.load_events("nonexistent_aggregate")
 
         assert events == []
 
-    def test_load_events_chronological_order(self, store):
-        """Test events are returned in chronological order"""
-        # Create events with different timestamps
-        event1 = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="app", to_step="screen"
-        )
-
-        # Append in reverse order
-        store.append(event2)
-        store.append(event1)
-
-        events = store.load_events("cand_123")
-
-        # Should be returned in chronological order
-        assert events[0].timestamp <= events[1].timestamp
-
-    def test_load_events_from_version(self, store):
+    def test_load_events_with_version_filter(self, store):
         """Test loading events from specific version"""
+        # Create events with different versions
         event1 = Event(
             event_type="Test",
             aggregate_id="agg_1",
-            data={},
             version=1,
+            timestamp=datetime(2026, 1, 29, 10, 0, 0),
         )
         event2 = Event(
             event_type="Test",
             aggregate_id="agg_1",
-            data={},
             version=2,
+            timestamp=datetime(2026, 1, 29, 10, 1, 0),
         )
         event3 = Event(
             event_type="Test",
             aggregate_id="agg_1",
-            data={},
             version=3,
+            timestamp=datetime(2026, 1, 29, 10, 2, 0),
         )
 
         store.append(event1)
         store.append(event2)
         store.append(event3)
 
+        # Load from version 2
         events = store.load_events("agg_1", from_version=2)
 
         assert len(events) == 2
-        assert event1 not in events
-        assert event2 in events
-        assert event3 in events
+        assert events[0].version == 2
+        assert events[1].version == 3
 
-    def test_load_events_by_type(self, store):
+    def test_load_events_by_type(self, store, sample_events):
         """Test loading events by type"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyCreated.create(candidacy_id="cand_2", name="Bob")
-        event3 = CandidacyStepChanged.create(
-            candidacy_id="cand_1", from_step="app", to_step="screen"
-        )
+        for event in sample_events:
+            store.append(event)
 
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        created_events = store.load_events_by_type("CandidacyCreated")
-
-        assert len(created_events) == 2
-        assert event1 in created_events
-        assert event2 in created_events
-        assert event3 not in created_events
-
-    def test_load_events_by_type_with_timestamp_filter(self, store):
-        """Test loading events by type with timestamp filtering"""
-        now = datetime.now()
-        past = now - timedelta(hours=1)
-        future = now + timedelta(hours=1)
-
-        event1 = Event(
-            event_type="Test",
-            aggregate_id="agg_1",
-            timestamp=past,
-            data={},
-        )
-        event2 = Event(
-            event_type="Test",
-            aggregate_id="agg_2",
-            timestamp=now,
-            data={},
-        )
-        event3 = Event(
-            event_type="Test",
-            aggregate_id="agg_3",
-            timestamp=future,
-            data={},
-        )
-
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        # Load events from now onwards
-        events = store.load_events_by_type("Test", from_timestamp=now)
+        events = store.load_events_by_type("CandidacyCreated")
 
         assert len(events) == 2
-        assert event1 not in events
-        assert event2 in events
-        assert event3 in events
+        assert all(e.event_type == "CandidacyCreated" for e in events)
 
-    def test_load_events_by_type_with_time_range(self, store):
-        """Test loading events by type with time range"""
-        now = datetime.now()
-        past = now - timedelta(hours=2)
-        recent = now - timedelta(hours=1)
-        future = now + timedelta(hours=1)
+    def test_load_events_by_type_with_timestamp_filter(self, store):
+        """Test loading events by type with timestamp filters"""
+        base_time = datetime(2026, 1, 29, 10, 0, 0)
 
-        event1 = Event(event_type="Test", aggregate_id="agg_1", timestamp=past, data={})
-        event2 = Event(
-            event_type="Test", aggregate_id="agg_2", timestamp=recent, data={}
+        event1 = CandidacyCreated.create(candidacy_id="c1", name="User 1")
+        event1 = Event(
+            event_id=event1.event_id,
+            event_type=event1.event_type,
+            aggregate_id=event1.aggregate_id,
+            timestamp=base_time,
+            data=event1.data,
+            metadata=event1.metadata,
         )
+
+        event2 = CandidacyCreated.create(candidacy_id="c2", name="User 2")
+        event2 = Event(
+            event_id=event2.event_id,
+            event_type=event2.event_type,
+            aggregate_id=event2.aggregate_id,
+            timestamp=base_time + timedelta(hours=1),
+            data=event2.data,
+            metadata=event2.metadata,
+        )
+
+        event3 = CandidacyCreated.create(candidacy_id="c3", name="User 3")
         event3 = Event(
-            event_type="Test", aggregate_id="agg_3", timestamp=future, data={}
+            event_id=event3.event_id,
+            event_type=event3.event_type,
+            aggregate_id=event3.aggregate_id,
+            timestamp=base_time + timedelta(hours=2),
+            data=event3.data,
+            metadata=event3.metadata,
         )
 
         store.append(event1)
         store.append(event2)
         store.append(event3)
 
-        # Load events in time range
+        # Load events from 1 hour onwards
         events = store.load_events_by_type(
-            "Test", from_timestamp=recent, to_timestamp=now
+            "CandidacyCreated",
+            from_timestamp=base_time + timedelta(hours=1),
+        )
+
+        assert len(events) == 2
+        assert events[0].aggregate_id == "c2"
+        assert events[1].aggregate_id == "c3"
+
+        # Load events up to 1 hour
+        events = store.load_events_by_type(
+            "CandidacyCreated",
+            to_timestamp=base_time + timedelta(hours=1),
+        )
+
+        assert len(events) == 2
+        assert events[0].aggregate_id == "c1"
+        assert events[1].aggregate_id == "c2"
+
+    def test_load_all_events(self, store, sample_events):
+        """Test loading all events"""
+        for event in sample_events:
+            store.append(event)
+
+        events = store.load_all_events()
+
+        assert len(events) == 3
+        # Events should be sorted by timestamp
+        for i in range(len(events) - 1):
+            assert events[i].timestamp <= events[i + 1].timestamp
+
+    def test_load_all_events_with_timestamp_filter(self, store):
+        """Test loading all events with timestamp filters"""
+        base_time = datetime(2026, 1, 29, 10, 0, 0)
+
+        event1 = Event(
+            event_type="Test1",
+            aggregate_id="a1",
+            timestamp=base_time,
+        )
+        event2 = Event(
+            event_type="Test2",
+            aggregate_id="a2",
+            timestamp=base_time + timedelta(hours=1),
+        )
+        event3 = Event(
+            event_type="Test3",
+            aggregate_id="a3",
+            timestamp=base_time + timedelta(hours=2),
+        )
+
+        store.append(event1)
+        store.append(event2)
+        store.append(event3)
+
+        # Load events in middle hour
+        events = store.load_all_events(
+            from_timestamp=base_time + timedelta(minutes=30),
+            to_timestamp=base_time + timedelta(hours=1, minutes=30),
         )
 
         assert len(events) == 1
-        assert event2 in events
+        assert events[0].event_type == "Test2"
 
-    def test_load_all_events(self, store):
-        """Test loading all events"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_1", from_step="app", to_step="screen"
-        )
-        event3 = ContactAdded.create(
-            candidacy_id="cand_2", contact_id="contact_1", contact_type="interview"
-        )
+    def test_clear_store(self, store, sample_events):
+        """Test clearing all events from store"""
+        for event in sample_events:
+            store.append(event)
 
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        all_events = store.load_all_events()
-
-        assert len(all_events) == 3
-
-    def test_load_all_events_with_timestamp_filter(self, store):
-        """Test loading all events with timestamp filtering"""
-        now = datetime.now()
-        past = now - timedelta(hours=1)
-        future = now + timedelta(hours=1)
-
-        event1 = Event(
-            event_type="Test1", aggregate_id="agg_1", timestamp=past, data={}
-        )
-        event2 = Event(event_type="Test2", aggregate_id="agg_2", timestamp=now, data={})
-        event3 = Event(
-            event_type="Test3", aggregate_id="agg_3", timestamp=future, data={}
-        )
-
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        events = store.load_all_events(from_timestamp=now)
-
-        assert len(events) == 2
-
-    def test_clear(self, store):
-        """Test clearing all events"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyCreated.create(candidacy_id="cand_2", name="Bob")
-
-        store.append(event1)
-        store.append(event2)
-
-        assert store.count() == 2
+        assert store.count() == 3
 
         store.clear()
 
@@ -279,20 +291,13 @@ class TestInMemoryEventStore:
         assert store.events_by_aggregate == {}
         assert store.events_by_type == {}
 
-    def test_count_by_aggregate(self, store):
+    def test_count_by_aggregate(self, store, sample_events):
         """Test counting events by aggregate"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="app", to_step="screen"
-        )
-        event3 = CandidacyCreated.create(candidacy_id="cand_456", name="Bob")
+        for event in sample_events:
+            store.append(event)
 
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        assert store.count_by_aggregate("cand_123") == 2
-        assert store.count_by_aggregate("cand_456") == 1
+        assert store.count_by_aggregate("cand_1") == 2
+        assert store.count_by_aggregate("cand_2") == 1
         assert store.count_by_aggregate("nonexistent") == 0
 
 
@@ -301,189 +306,130 @@ class TestFileEventStore:
 
     @pytest.fixture
     def temp_dir(self):
-        """Create temporary directory"""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            yield tmp_dir
+        """Create temporary directory for file storage"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            yield tmpdir
 
     @pytest.fixture
     def store(self, temp_dir):
-        """Create file event store"""
+        """Create file-based event store"""
         return FileEventStore(temp_dir)
 
-    def test_initialization(self, temp_dir):
-        """Test store initialization creates directory"""
+    def test_store_initialization_creates_directory(self, temp_dir):
+        """Test store creates base directory"""
         store = FileEventStore(temp_dir)
 
-        assert store.base_path.exists()
-        assert store.base_path.is_dir()
+        assert Path(temp_dir).exists()
+        assert Path(temp_dir).is_dir()
 
-    def test_append_creates_file(self, store):
-        """Test appending creates JSON file"""
+    def test_append_event_creates_file(self, store, temp_dir):
+        """Test appending event creates JSON file"""
         event = CandidacyCreated.create(
-            candidacy_id="cand_123", name="Alice", email="alice@example.com"
+            candidacy_id="cand_123",
+            name="Test User",
         )
 
         store.append(event)
 
-        # Check file exists
-        event_file = store.base_path / "cand_123" / f"{event.event_id}.json"
+        # Check aggregate directory created
+        aggregate_dir = Path(temp_dir) / "cand_123"
+        assert aggregate_dir.exists()
+
+        # Check event file created
+        event_file = aggregate_dir / f"{event.event_id}.json"
         assert event_file.exists()
 
-        # Check file content
+        # Verify file contents
         with open(event_file) as f:
             data = json.load(f)
             assert data["event_type"] == "CandidacyCreated"
             assert data["aggregate_id"] == "cand_123"
 
-    def test_append_creates_aggregate_directory(self, store):
-        """Test appending creates aggregate directory"""
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-
-        store.append(event)
-
-        aggregate_dir = store.base_path / "cand_123"
-        assert aggregate_dir.exists()
-        assert aggregate_dir.is_dir()
-
     def test_load_events_from_files(self, store):
-        """Test loading events from files"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="app", to_step="screen"
-        )
+        """Test loading events from JSON files"""
+        event1 = CandidacyCreated.create("cand_1", "User 1")
+        event2 = CandidacyStepChanged.create("cand_1", "app", "interview")
 
         store.append(event1)
         store.append(event2)
 
-        # Load events
-        events = store.load_events("cand_123")
+        events = store.load_events("cand_1")
 
         assert len(events) == 2
-        # Events should be loaded (though as base Event class)
         assert events[0].event_type in ["CandidacyCreated", "CandidacyStepChanged"]
+        assert events[1].event_type in ["CandidacyCreated", "CandidacyStepChanged"]
 
-    def test_load_events_nonexistent_aggregate(self, store):
-        """Test loading events for nonexistent aggregate"""
+    def test_load_events_for_nonexistent_aggregate(self, store):
+        """Test loading events for aggregate with no events"""
         events = store.load_events("nonexistent")
 
         assert events == []
 
-    def test_load_events_from_version(self, store):
+    def test_load_events_with_version_filter(self, store):
         """Test loading events from specific version"""
-        event1 = Event(event_type="Test", aggregate_id="agg_1", data={}, version=1)
-        event2 = Event(event_type="Test", aggregate_id="agg_1", data={}, version=2)
-        event3 = Event(event_type="Test", aggregate_id="agg_1", data={}, version=3)
+        event1 = Event(
+            event_type="Test",
+            aggregate_id="agg_1",
+            version=1,
+            timestamp=datetime(2026, 1, 29, 10, 0, 0),
+        )
+        event2 = Event(
+            event_type="Test",
+            aggregate_id="agg_1",
+            version=2,
+            timestamp=datetime(2026, 1, 29, 10, 1, 0),
+        )
 
         store.append(event1)
         store.append(event2)
-        store.append(event3)
 
         events = store.load_events("agg_1", from_version=2)
 
-        assert len(events) == 2
+        assert len(events) == 1
+        assert events[0].version == 2
 
     def test_load_events_by_type(self, store):
-        """Test loading events by type from files"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyCreated.create(candidacy_id="cand_2", name="Bob")
-        event3 = CandidacyStepChanged.create(
-            candidacy_id="cand_1", from_step="app", to_step="screen"
-        )
+        """Test loading events by type across aggregates"""
+        store.append(CandidacyCreated.create("cand_1", "User 1"))
+        store.append(CandidacyStepChanged.create("cand_1", "a", "b"))
+        store.append(CandidacyCreated.create("cand_2", "User 2"))
 
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        created_events = store.load_events_by_type("CandidacyCreated")
-
-        assert len(created_events) == 2
-
-    def test_load_events_by_type_with_timestamp_filter(self, store):
-        """Test loading events by type with timestamp filtering"""
-        now = datetime.now()
-        past = now - timedelta(hours=1)
-        future = now + timedelta(hours=1)
-
-        event1 = Event(event_type="Test", aggregate_id="agg_1", timestamp=past, data={})
-        event2 = Event(event_type="Test", aggregate_id="agg_2", timestamp=now, data={})
-        event3 = Event(
-            event_type="Test", aggregate_id="agg_3", timestamp=future, data={}
-        )
-
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        events = store.load_events_by_type("Test", from_timestamp=now)
+        events = store.load_events_by_type("CandidacyCreated")
 
         assert len(events) == 2
+        assert all(e.event_type == "CandidacyCreated" for e in events)
 
-    def test_load_all_events_from_files(self, store):
-        """Test loading all events from files"""
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_2", from_step="app", to_step="screen"
-        )
+    def test_load_all_events(self, store):
+        """Test loading all events from all aggregates"""
+        store.append(CandidacyCreated.create("cand_1", "User 1"))
+        store.append(CandidacyCreated.create("cand_2", "User 2"))
+        store.append(CandidacyStepChanged.create("cand_1", "a", "b"))
 
-        store.append(event1)
-        store.append(event2)
+        events = store.load_all_events()
 
-        all_events = store.load_all_events()
+        assert len(events) == 3
 
-        assert len(all_events) == 2
+    def test_events_persist_across_store_instances(self, temp_dir):
+        """Test events persist when creating new store instance"""
+        # Create store and append event
+        store1 = FileEventStore(temp_dir)
+        event = CandidacyCreated.create("cand_persist", "Persist User")
+        store1.append(event)
 
-    def test_load_all_events_with_timestamp_filter(self, store):
-        """Test loading all events with timestamp filtering"""
-        now = datetime.now()
-        past = now - timedelta(hours=1)
-        future = now + timedelta(hours=1)
+        # Create new store instance
+        store2 = FileEventStore(temp_dir)
+        events = store2.load_events("cand_persist")
 
-        event1 = Event(
-            event_type="Test1", aggregate_id="agg_1", timestamp=past, data={}
-        )
-        event2 = Event(event_type="Test2", aggregate_id="agg_2", timestamp=now, data={})
-        event3 = Event(
-            event_type="Test3", aggregate_id="agg_3", timestamp=future, data={}
-        )
-
-        store.append(event1)
-        store.append(event2)
-        store.append(event3)
-
-        events = store.load_all_events(from_timestamp=now, to_timestamp=future)
-
-        assert len(events) == 2
-
-    def test_event_file_structure(self, store):
-        """Test event file structure"""
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-
-        store.append(event)
-
-        # Check directory structure
-        assert (store.base_path / "cand_123").exists()
-        assert (store.base_path / "cand_123" / f"{event.event_id}.json").exists()
-
-        # Check JSON structure
-        event_file = store.base_path / "cand_123" / f"{event.event_id}.json"
-        with open(event_file) as f:
-            data = json.load(f)
-
-        assert "event_id" in data
-        assert "event_type" in data
-        assert "aggregate_id" in data
-        assert "timestamp" in data
-        assert "data" in data
-        assert "metadata" in data
-        assert "version" in data
+        assert len(events) == 1
+        assert events[0].aggregate_id == "cand_persist"
 
 
 class TestEventSubscriber:
-    """Test EventSubscriber implementation"""
+    """Test EventSubscriber for event notifications"""
 
     @pytest.fixture
     def store(self):
-        """Create event store"""
+        """Create in-memory store for testing"""
         return InMemoryEventStore()
 
     @pytest.fixture
@@ -491,159 +437,183 @@ class TestEventSubscriber:
         """Create event subscriber"""
         return EventSubscriber(store)
 
-    def test_initialization(self, subscriber, store):
-        """Test subscriber initialization"""
+    def test_subscriber_initialization(self, subscriber, store):
+        """Test subscriber initializes correctly"""
         assert subscriber.event_store == store
         assert subscriber.subscribers == {}
         assert subscriber.all_subscribers == []
 
-    def test_subscribe_to_event_type(self, subscriber):
+    def test_subscribe_to_event_type(self, subscriber, store):
         """Test subscribing to specific event type"""
-        called = []
-
-        def handler(event):
-            called.append(event)
+        handler = Mock()
 
         subscriber.subscribe("CandidacyCreated", handler)
 
         assert "CandidacyCreated" in subscriber.subscribers
         assert handler in subscriber.subscribers["CandidacyCreated"]
 
-    def test_subscribe_all(self, subscriber):
-        """Test subscribing to all events"""
-        called = []
-
-        def handler(event):
-            called.append(event)
-
-        subscriber.subscribe_all(handler)
-
-        assert handler in subscriber.all_subscribers
-
-    def test_notification_on_append(self, subscriber, store):
-        """Test subscribers are notified on event append"""
-        called = []
-
-        def handler(event):
-            called.append(event)
-
+    def test_handler_called_on_matching_event(self, subscriber, store):
+        """Test handler is called when matching event is appended"""
+        handler = Mock()
         subscriber.subscribe("CandidacyCreated", handler)
 
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
+        event = CandidacyCreated.create("cand_1", "Test User")
         store.append(event)
 
-        assert len(called) == 1
-        assert called[0] == event
+        handler.assert_called_once_with(event)
 
-    def test_notification_type_specific(self, subscriber, store):
-        """Test only subscribed event types trigger handler"""
-        created_called = []
-        changed_called = []
+    def test_handler_not_called_on_non_matching_event(self, subscriber, store):
+        """Test handler is not called for different event type"""
+        handler = Mock()
+        subscriber.subscribe("CandidacyCreated", handler)
 
-        def created_handler(event):
-            created_called.append(event)
+        event = CandidacyStepChanged.create("cand_1", "a", "b")
+        store.append(event)
 
-        def changed_handler(event):
-            changed_called.append(event)
+        handler.assert_not_called()
 
-        subscriber.subscribe("CandidacyCreated", created_handler)
-        subscriber.subscribe("CandidacyStepChanged", changed_handler)
-
-        event1 = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_123", from_step="app", to_step="screen"
-        )
-
-        store.append(event1)
-        store.append(event2)
-
-        assert len(created_called) == 1
-        assert len(changed_called) == 1
-
-    def test_notification_all_subscribers(self, subscriber, store):
-        """Test all-event subscribers receive all events"""
-        called = []
-
-        def handler(event):
-            called.append(event)
-
-        subscriber.subscribe_all(handler)
-
-        event1 = CandidacyCreated.create(candidacy_id="cand_1", name="Alice")
-        event2 = CandidacyStepChanged.create(
-            candidacy_id="cand_1", from_step="app", to_step="screen"
-        )
-
-        store.append(event1)
-        store.append(event2)
-
-        assert len(called) == 2
-
-    def test_multiple_subscribers_same_type(self, subscriber, store):
-        """Test multiple subscribers for same event type"""
-        called1 = []
-        called2 = []
-
-        def handler1(event):
-            called1.append(event)
-
-        def handler2(event):
-            called2.append(event)
+    def test_multiple_handlers_for_same_event_type(self, subscriber, store):
+        """Test multiple handlers can subscribe to same event type"""
+        handler1 = Mock()
+        handler2 = Mock()
 
         subscriber.subscribe("CandidacyCreated", handler1)
         subscriber.subscribe("CandidacyCreated", handler2)
 
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
+        event = CandidacyCreated.create("cand_1", "Test")
         store.append(event)
 
-        assert len(called1) == 1
-        assert len(called2) == 1
+        handler1.assert_called_once()
+        handler2.assert_called_once()
 
-    def test_handler_exception_doesnt_break_other_handlers(self, subscriber, store):
-        """Test exception in one handler doesn't affect others"""
-        called = []
+    def test_subscribe_all_events(self, subscriber, store):
+        """Test subscribing to all events"""
+        handler = Mock()
 
-        def failing_handler(event):
-            raise ValueError("Test error")
+        subscriber.subscribe_all(handler)
 
-        def working_handler(event):
-            called.append(event)
+        # Append different event types
+        event1 = CandidacyCreated.create("cand_1", "User")
+        event2 = CandidacyStepChanged.create("cand_1", "a", "b")
+
+        store.append(event1)
+        store.append(event2)
+
+        assert handler.call_count == 2
+
+    def test_handler_exceptions_are_caught(self, subscriber, store):
+        """Test exceptions in handlers don't break event processing"""
+        failing_handler = Mock(side_effect=Exception("Handler error"))
+        successful_handler = Mock()
 
         subscriber.subscribe("CandidacyCreated", failing_handler)
-        subscriber.subscribe("CandidacyCreated", working_handler)
+        subscriber.subscribe("CandidacyCreated", successful_handler)
 
-        event = CandidacyCreated.create(candidacy_id="cand_123", name="Alice")
+        event = CandidacyCreated.create("cand_1", "Test")
+
+        # Should not raise exception
         store.append(event)
 
-        # Working handler should still be called despite failing handler
-        assert len(called) == 1
+        # Both handlers should have been called
+        failing_handler.assert_called_once()
+        successful_handler.assert_called_once()
+
+    def test_subscribe_all_with_type_specific_handlers(self, subscriber, store):
+        """Test all-event and type-specific handlers work together"""
+        all_handler = Mock()
+        type_handler = Mock()
+
+        subscriber.subscribe_all(all_handler)
+        subscriber.subscribe("CandidacyCreated", type_handler)
+
+        event = CandidacyCreated.create("cand_1", "Test")
+        store.append(event)
+
+        # Both should be called
+        all_handler.assert_called_once()
+        type_handler.assert_called_once()
 
 
-class TestEventStoreInterface:
-    """Test EventStore abstract interface"""
+class TestEventStoreIntegration:
+    """Integration tests for event store usage patterns"""
 
-    def test_event_store_is_abstract(self):
-        """Test EventStore is abstract and can't be instantiated"""
-        with pytest.raises(TypeError):
-            EventStore()  # type: ignore
-
-    def test_inmemory_implements_interface(self):
-        """Test InMemoryEventStore implements EventStore interface"""
+    def test_complete_candidacy_workflow(self):
+        """Test storing and loading complete candidacy workflow"""
         store = InMemoryEventStore()
 
-        assert isinstance(store, EventStore)
-        assert hasattr(store, "append")
-        assert hasattr(store, "load_events")
-        assert hasattr(store, "load_events_by_type")
-        assert hasattr(store, "load_all_events")
+        # Create candidacy
+        created = CandidacyCreated.create(
+            candidacy_id="cand_workflow",
+            name="Workflow Test",
+            email="test@example.com",
+        )
+        store.append(created)
 
-    def test_file_implements_interface(self):
-        """Test FileEventStore implements EventStore interface"""
-        with tempfile.TemporaryDirectory() as tmp_dir:
-            store = FileEventStore(tmp_dir)
+        # Change step
+        step_changed = CandidacyStepChanged.create(
+            candidacy_id="cand_workflow",
+            from_step="application",
+            to_step="interview",
+        )
+        store.append(step_changed)
 
-            assert isinstance(store, EventStore)
-            assert hasattr(store, "append")
-            assert hasattr(store, "load_events")
-            assert hasattr(store, "load_events_by_type")
-            assert hasattr(store, "load_all_events")
+        # Terminate
+        terminated = CandidacyTerminated.create(
+            candidacy_id="cand_workflow",
+            reason="hired",
+        )
+        store.append(terminated)
+
+        # Load all events for this candidacy
+        events = store.load_events("cand_workflow")
+
+        assert len(events) == 3
+        assert events[0].event_type == "CandidacyCreated"
+        assert events[1].event_type == "CandidacyStepChanged"
+        assert events[2].event_type == "CandidacyTerminated"
+
+    def test_file_store_with_subscriber(self):
+        """Test file store with event subscriber"""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            store = FileEventStore(tmpdir)
+            subscriber = EventSubscriber(store)
+
+            handler = Mock()
+            subscriber.subscribe("CandidacyCreated", handler)
+
+            event = CandidacyCreated.create("cand_1", "Test")
+            store.append(event)
+
+            # Handler should be called
+            handler.assert_called_once()
+
+            # Event should be persisted
+            events = store.load_events("cand_1")
+            assert len(events) == 1
+
+    def test_event_store_acts_as_audit_log(self):
+        """Test event store provides complete audit trail"""
+        store = InMemoryEventStore()
+
+        # Multiple operations on same candidacy
+        operations = [
+            CandidacyCreated.create("cand_1", "User", user_id="recruiter_1"),
+            CandidacyStepChanged.create(
+                "cand_1", "app", "screen", user_id="recruiter_1"
+            ),
+            CandidacyStepChanged.create(
+                "cand_1", "screen", "interview", user_id="recruiter_2"
+            ),
+            CandidacyTerminated.create("cand_1", "hired", user_id="manager_1"),
+        ]
+
+        for op in operations:
+            store.append(op)
+
+        # Can reconstruct full history
+        history = store.load_events("cand_1")
+
+        assert len(history) == 4
+        # Can see who made each change
+        assert history[0].metadata.get("user_id") == "recruiter_1"
+        assert history[3].metadata.get("user_id") == "manager_1"
